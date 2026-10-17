@@ -9,7 +9,7 @@ scenes.json:
   }
   scene "sfx": [{"file", "at" (s from scene start), "db", "len"}]           # one-shots
 Scene start times follow assemble.py exactly (narration + pad, crossfade overlap).
-The bed (ambience + music + one-shots) is gently ducked under the narration.
+No ducking; the master gets a static gain to FINAL_LUFS and a peak limiter.
 """
 import argparse
 import subprocess
@@ -90,15 +90,21 @@ def main():
     # No ducking: pumping the bed between phrases made the wind swell every few seconds
     # and sound like a short loop. Bed levels are set relative to the voice instead.
     graph += f";[0:a]volume={vgain:.2f}dB[voice]"
-    graph += (";[voice][bed]amix=inputs=2:duration=first:normalize=0,"
-              f"loudnorm=I={FINAL_LUFS}:TP=-1.5:LRA=11,aresample=48000[a]")
+    graph += ";[voice][bed]amix=inputs=2:duration=first:normalize=0,aresample=48000[a]"
 
     script = root / "sound_graph.txt"
     script.write_text(graph)
-    out = root / args.out
+    premix = root / "sound_premix.wav"
     subprocess.run(["ffmpeg", "-y", "-v", "error", *inputs, "-filter_complex_script", str(script),
-                    "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
-                    "-t", f"{total:.3f}", str(out)], check=True)
+                    "-map", "[a]", "-t", f"{total:.3f}", "-c:a", "pcm_s24le", str(premix)], check=True)
+    # Static gain to FINAL_LUFS plus a peak limiter. Single-pass loudnorm is dynamic: it lifts
+    # the pauses between phrases, so any cut to the wind or music was partly undone.
+    gain = FINAL_LUFS - integrated_lufs(premix)
+    out = root / args.out
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(video), "-i", str(premix),
+                    "-map", "0:v", "-map", "1:a", "-af", f"volume={gain:.2f}dB,alimiter=limit=0.84:level=false",
+                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", f"{total:.3f}", str(out)], check=True)
+    premix.unlink()
     print(f"{out}: {media_duration(out):.1f}s, {len(labels)} sound layers")
 
 

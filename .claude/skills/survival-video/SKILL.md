@@ -121,8 +121,9 @@ SCENE: <prompt>
 `python3 scripts/sound_design.py work/<slug>/scenes.json --video final.mp4` → `final_sd.mp4`.
 No picture re-render (video stream is copied). It reads `"sound": {"ambience": [...],
 "music": [...]}` (scene ranges, looped, faded) and per-scene one-shot `"sfx"`, places them
-on the real scene timeline, ducks the bed under the narration, brings the voice to −16 LUFS
-and the master to −14 LUFS (YouTube). Check bed vs voice per section with `volumedetect`:
+on the real scene timeline, brings the voice to −16 LUFS (no ducking)
+and the master to −14 LUFS (YouTube) with a static gain + peak limiter. Never use single-pass
+`loudnorm` on the master: it is dynamic and lifts the pauses, undoing any cut to wind or music. Check bed vs voice per section with `volumedetect`:
 speech sections ≈ 8–12 dB under the voice, storm/blizzard ≈ 5–7 dB under.
 Wind is not a constant bed: only in outdoor scenes (soft in calm outdoor moments), none in
 the cave, in close-ups, diagrams or quiet tense moments — there use fire crackle / cave room
