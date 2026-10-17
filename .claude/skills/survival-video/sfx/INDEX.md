@@ -48,7 +48,6 @@ Mixkit Sound Effects Free License (commercial use incl. YouTube, no attribution)
 | sfx/mixkit/terror_night_ambience.mp3 | Terror night ambiance | 118.1s | 1:58 |
 | sfx/mixkit/cavern_ambience.mp3 | Creepy cavern ambience loop | 47.8s | 0:47 |
 | sfx/mixkit/wood_pile_drop.mp3 | Small wood plank pile drop | 1.8s | 0:01 |
-| sfx/music/music_calm_vastness.mp3 | Vastness (music) | 229.9s | 3:50 |
 | sfx/music/music_tense_silent_descent.mp3 | Silent Descent (music) | 160.4s | 2:40 |
 | sfx/music/music_dark_shadows.mp3 | Dark Shadows (music) | 106.2s | 1:46 |
 | sfx/music/music_forest_mist.mp3 | Forest Mist Whispers (music) | 150.9s | 2:31 |
@@ -66,3 +65,15 @@ Mixkit Sound Effects Free License (commercial use incl. YouTube, no attribution)
 | File | Length | Description |
 |---|---|---|
 | commons/mammoth_herd_trumpet.mp3 | 5.0 s | three mammoths trumpeting one after another, built from Wikimedia Commons "Elephant voice - trumpeting.ogg" (CC0): pitched down, stretched, echo |
+
+### Added for v6
+| File | Length | Description |
+|---|---|---|
+| sfx/music/music_rest_now.mp3 | 5:00 | Rest Now (Mixkit music): calm ambient pads, no melody |
+| sfx/music/music_voxscape.mp3 | 5:00 | Voxscape (Mixkit music): slow ambient drone |
+| mixkit/branch_break.mp3 | 1.2 s | tree branch breaking (Mixkit 2943) |
+| mixkit/twig_break.mp3 | 1.2 s | twig snapping (Mixkit 2945) |
+| mixkit/wood_hard_hit.mp3 | 0.4 s | hard wooden knock (Mixkit 2182) |
+| mixkit/wood_scrape_creak.mp3 | 2.0 s | creaky wood scraping (Mixkit 3157) |
+
+Removed: music_calm_vastness (the user found it sounded like Harry Potter).
