@@ -83,9 +83,22 @@ python3 scripts/images.py work/<slug>/scenes.json [--resolution 2k]
 python3 scripts/assemble.py work/<slug>/scenes.json [--music sfx/music/<bed>.mp3]
 ```
 
-Each image stays on screen exactly as long as its scene audio (+0.15 s), with a slow
-zoom, 0.4 s crossfades, scene SFX mixed in, optional music ducked under the voice.
-Output `work/<slug>/final.mp4`, 1080p30.
+## Effects (fixed — approved on the 40 s test, identical in every video)
+
+All values live in `EFFECTS` at the top of `scripts/assemble.py`; never change them
+unless the user asks, and never pass ad-hoc overrides.
+
+| Setting | Value |
+|---|---|
+| Output | 1920×1080, 30 fps, H.264 CRF 20 (preset medium), AAC 192k 48 kHz stereo |
+| Image duration | exactly the scene's narration length + 0.15 s pad |
+| Motion | slow zoom 1.00 → 1.08 over the scene; even scenes zoom in, odd scenes zoom out; centred |
+| Zoom renderer | `perspective` filter, cubic sub-pixel interpolation (no `zoompan`: it shakes) |
+| Transition | 0.4 s crossfade (`xfade=fade` + `acrossfade`) |
+| SFX | per scene from `sfx/`, default −8 dB, 0.3 s fade-out |
+| Music | optional bed at −22 dB, sidechain-ducked under the voice |
+
+Output `work/<slug>/final.mp4`.
 
 ## Master prompt (built by `scripts/images.py::build_prompt`)
 
