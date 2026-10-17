@@ -1,92 +1,107 @@
 ---
 name: survival-video
-description: Produce an animated "X Survival N Days/1 Year" YouTube video (prehistoric / dinosaur settings) in the style of the reference competitor — script, scene table, voiceover (VoiceGen), images (RoyalTechno, multi-reference), and FFmpeg assembly. Use whenever the user gives a video topic for the survival channel or asks to make, test or fix any step of this pipeline.
+description: Produce an animated "X Survival N Days/1 Year" YouTube video (prehistoric / dinosaur settings) in the style of the reference competitor — script, scene table, voiceover (VoiceGen), images (RoyalTechno, multi-reference), sound effects from a downloaded library, and FFmpeg assembly. Use whenever the user gives a video topic for the survival channel or asks to make, test or fix any step of this pipeline.
 ---
 
 # Survival video pipeline
 
-The user supplies the topic. Nothing about ideas is stored here: every decision about
-style, narration and pacing comes from analysing the reference material at the start
-of each session.
+The user supplies every topic. Nothing about ideas is stored here: style, narration and
+pacing are re-derived from the reference material at the start of each session.
+
+Limits matter (the user is on a $20 plan): never look at generated images unless the
+user asks, never run the full generation yourself — prepare everything, run only the
+small test the user approves, and hand over the exact commands for the full run.
 
 ## 0. Session start: analyse the references (always, before writing anything)
 
-1. `python3 scripts/analyze_reference.py` — extracts frames from `style/reference.mp4`
-   into `work/ref_frames/`, builds contact sheets and prints pacing stats
-   (average seconds per image, cut count). Look at every contact sheet.
+1. `python3 scripts/analyze_reference.py` → frames of `style/reference.mp4` in
+   `work/ref_frames/`, two contact sheets, pacing stats. Look at the contact sheets once.
 2. Read both transcripts in `style/transcripts/`.
-3. Write `work/style_notes.md` for this session:
-   - visual: line weight, palette, character proportions, backgrounds, shot types,
-     on-screen text, what changes between consecutive frames;
-   - narration: person/tense, hook in the first 30 s, how numbers and supplies are
-     used, escalation rhythm (day markers), cliffhanger ending, words per minute;
-   - pacing: seconds per image, words per scene.
-   Derive the style block for image prompts from this analysis (template below).
+3. Write `work/style_notes.md` (session-only, not committed):
+   - visual: line weight, palette, hero design, backgrounds, which shot types occur and
+     how often, how on-screen text looks (font, colour, when it appears);
+   - narration: person/tense, hook in the first 30 s, use of numbers and supplies,
+     escalation rhythm (day markers), cliffhanger ending, words per minute;
+   - pacing: seconds per image → words per scene.
+   - `style_block` and `shot_types` for the master prompt (see below).
 
 ## 1. Script
 
-Write the script for the user's topic following `work/style_notes.md`.
-Target length and structure come from the transcripts (≈1 900–2 100 words for ~11–12 min).
-Show the script to the user and wait for approval before spending credits.
+Write the script for the user's topic following `work/style_notes.md` (length and
+structure taken from the transcripts). Wait for the user's approval.
 
 ## 2. Scene table → `work/<slug>/scenes.json`
-
-Split the approved script into scenes, one image per scene, sized to the measured
-pacing (words per scene). Schema:
 
 ```json
 {
   "title": "Ice Age Survival 1 Year",
-  "voice": {"voice_id": "...", "model_id": "sonic-3.6", "speed": 100},
-  "style_block": "…derived in step 0…",
-  "refs": {"hero": "refs/hero.png", "cave_inside": "refs/cave_inside.png"},
+  "voice": {"template_id": "chosen by the user"},
+  "resolution": null,
+  "style_block": "from step 0",
+  "shot_types": {"hero_location": "...", "object": "...", "cutaway": "...", "big_text": "...", "closeup": "..."},
+  "refs": {"hero": "refs/hero.png", "cave_main": "refs/cave_main.png"},
+  "ref_roles": {"hero": "hero", "cave_main": "location"},
   "scenes": [
-    {"id": 1, "text": "narration for this scene",
-     "prompt": "what is in the frame: action, emotion, shot, props",
-     "refs": ["hero", "cave_inside"]}
+    {"id": 1, "text": "narration", "type": "hero_location",
+     "prompt": "what is in the frame: action, emotion, framing, props",
+     "refs": ["hero", "cave_main"], "text_in_image": "",
+     "sfx": [{"file": "sfx/alarms/siren_01.mp3", "at": 0.0, "db": -8, "len": 4}]}
   ]
 }
 ```
 
-`refs` per scene: include `hero` whenever the hero is visible, plus the location
-reference whenever the scene is in a recurring place. Decide this yourself per scene.
+- One image per scene; scene length from the measured pacing.
+- `refs`: `hero` whenever the hero is visible; the location ref whenever the scene is in a
+  recurring place; none for isolated objects/diagrams. Decide per scene.
+- `text_in_image`: only where the reference uses on-screen text (numbers, labels, warnings).
+- `sfx`: pick files from `sfx/INDEX.md` where the reference would have a sound.
 
-## 3. References (once per new hero / location)
+## 3. Choices to ask the user (every new video)
 
-Generate candidates with `scripts/images.py --refs-only`, show them, let the user pick,
-save the chosen ones under `refs/`. Reuse them for every later video.
+- Voice: run `python3 scripts/voicegen.py --list`, show the saved templates, the user picks.
+- Image resolution: offer the model default (cheapest, $0.02) or `2k`/`4k` (2x/4x).
+  Default to the cheapest unless the user chooses otherwise.
 
-## 4. Generate
+## 4. References (once per new hero / location)
 
-- Voice: `python3 scripts/voicegen.py work/<slug>/scenes.json` → `audio/scene_###.mp3`
-  (one task per scene, so every scene has its own exact duration).
-- Images: `python3 scripts/images.py work/<slug>/scenes.json` → `images/scene_###.png`.
-  Always test on 3–5 scenes first and show the user before the full batch.
-- Review every image (contact sheets: `scripts/contact_sheet.py`). Regenerate the ones
-  that break the style, the hero design or the location; note why in `review.md`.
+`python3 scripts/images.py --refs-only "<prompt>" --out refs/candidates/<name> --count 4`
+(add `--ref work/ref_frames/cut_0001.jpg` to anchor the style). The user picks; save as
+`refs/<name>.png` and reuse in every later video.
 
-## 5. Assemble
+## 5. Test, then hand over
 
-`python3 scripts/assemble.py work/<slug>/scenes.json` — each image stays on screen exactly
-as long as its scene audio, with a slow zoom/pan, short crossfades and optional music
-(`--music file.mp3`, ducked under the voice). Output: `work/<slug>/final.mp4` (1080p30).
-
-## Prompt template for images
+Run only a 3–5 scene test (`--only 1,2,3`) of voice and images and assemble it, so the user
+can check. The full run is done by the user's command:
 
 ```
-<style_block from step 0>
-SCENE: <scene.prompt>
-Keep the hero identical to the hero reference image. Keep the location identical to
-the location reference image. 16:9, no text, no watermark, no captions.
+python3 scripts/voicegen.py work/<slug>/scenes.json
+python3 scripts/images.py work/<slug>/scenes.json [--resolution 2k]
+python3 scripts/assemble.py work/<slug>/scenes.json [--music sfx/music/<bed>.mp3]
 ```
+
+Each image stays on screen exactly as long as its scene audio (+0.15 s), with a slow
+zoom, 0.4 s crossfades, scene SFX mixed in, optional music ducked under the voice.
+Output `work/<slug>/final.mp4`, 1080p30.
+
+## Master prompt (built by `scripts/images.py::build_prompt`)
+
+```
+<style_block>
+SHOT TYPE: <shot_types[type]>
+SCENE: <prompt>
+[hero ref rule] [location ref rule]
+<exact text rule | "No text, letters or numbers anywhere in the image.">
+16:9 frame, no watermark, no borders.
+```
+
+## Sound library
+
+Downloaded packs live in `sfx/<category>/` (not generated). `sfx/INDEX.md` lists each
+file with a one-line description and length; keep it updated when packs are added.
 
 ## Keys and costs
 
-- Keys come only from environment variables `VOICEGEN_API_KEY` and `ROYALTECHNO_API_KEY`.
-  Never write a key to a file, a commit or the chat.
-- Images: `nano-banana-pro` (≈$0.02/image, up to 10 reference images). Voice: billed per
-  character by VoiceGen. Ask before any batch larger than the 3–5 scene test.
-- RoyalTechno client rules are enforced: poll images every 5 s with `If-None-Match`,
-  ≤ 20 jobs in flight, one `Idempotency-Key` per job, stop on 400/401/402/403,
-  retry only 429 (after `Retry-After`) and 503.
+- Keys only from env `VOICEGEN_API_KEY`, `ROYALTECHNO_API_KEY`. Never in files, commits, chat.
+- RoyalTechno rules: poll images every 5 s with `If-None-Match`, ≤ 20 jobs in flight,
+  one `Idempotency-Key` per job, stop on 400/401/402/403, retry only 429/503.
 - VoiceGen results expire after 3 days: download immediately.

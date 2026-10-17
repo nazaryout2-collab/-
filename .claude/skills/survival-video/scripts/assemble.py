@@ -1,4 +1,5 @@
-"""Image + per-scene audio -> final.mp4. Each image lasts exactly as long as its scene audio.
+"""Image + per-scene audio (+ scene SFX from sfx/) -> final.mp4.
+Each image lasts exactly as long as its scene audio.
 
 Usage: python3 assemble.py work/<slug>/scenes.json [--music bed.mp3] [--music-db -22]
        [--fade 0.4] [--pad 0.15] [--fps 30] [--size 1920x1080]
@@ -7,14 +8,30 @@ import argparse
 import subprocess
 from pathlib import Path
 
-from common import load_project, media_duration, scene_name
+from common import SKILL_DIR, load_project, media_duration, scene_name
 
 
 def run(cmd):
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
 
-def scene_clip(img, audio, dest, dur, fps, w, h, idx):
+def sfx_inputs(sfx, dur):
+    """Scene sound effects from the downloaded library: [{"file", "at", "db", "len"}]."""
+    args, chains, labels = [], [], []
+    for k, fx in enumerate(sfx or [], start=2):
+        path = Path(fx["file"])
+        if not path.is_absolute():
+            path = SKILL_DIR / path
+        args += ["-i", str(path)]
+        at_ms = int(float(fx.get("at", 0)) * 1000)
+        length = min(float(fx.get("len", dur)), dur)
+        chains.append(f"[{k}:a]atrim=0:{length:.3f},afade=t=out:st={max(0, length - 0.3):.3f}:d=0.3,"
+                      f"volume={fx.get('db', -8)}dB,adelay={at_ms}|{at_ms},aformat=channel_layouts=stereo[fx{k}]")
+        labels.append(f"[fx{k}]")
+    return args, chains, labels
+
+
+def scene_clip(img, audio, dest, dur, fps, w, h, idx, sfx=None):
     frames = max(1, round(dur * fps))
     # Alternate slow zoom-in / zoom-out with a gentle drift so stills feel alive.
     if idx % 2 == 0:
@@ -24,8 +41,15 @@ def scene_clip(img, audio, dest, dur, fps, w, h, idx):
     vf = (f"scale={w * 2}:{h * 2}:force_original_aspect_ratio=increase,crop={w * 2}:{h * 2},"
           f"zoompan=z='{z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={w}x{h}:fps={fps},"
           f"format=yuv420p")
-    run(["ffmpeg", "-y", "-loop", "1", "-i", str(img), "-i", str(audio),
-         "-filter_complex", f"[0:v]{vf}[v];[1:a]apad=whole_dur={dur:.3f}[a]",
+    fx_args, fx_chains, fx_labels = sfx_inputs(sfx, dur)
+    voice = f"[1:a]aformat=channel_layouts=stereo,apad=whole_dur={dur:.3f}"
+    if fx_labels:
+        audio_graph = (f"{voice}[vo];" + ";".join(fx_chains) +
+                       f";[vo]{''.join(fx_labels)}amix=inputs={1 + len(fx_labels)}:duration=first:normalize=0[a]")
+    else:
+        audio_graph = f"{voice}[a]"
+    run(["ffmpeg", "-y", "-loop", "1", "-i", str(img), "-i", str(audio), *fx_args,
+         "-filter_complex", f"[0:v]{vf}[v];{audio_graph}",
          "-map", "[v]", "-map", "[a]", "-t", f"{dur:.3f}",
          "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-r", str(fps),
          "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2", str(dest)])
@@ -56,7 +80,7 @@ def main():
         # The crossfade eats --fade seconds from the end of the clip, so add it back.
         dur = media_duration(audio) + args.pad + (args.fade if i < len(project["scenes"]) - 1 else 0)
         dest = clips_dir / f"{name}.mp4"
-        scene_clip(img, audio, dest, dur, args.fps, w, h, i)
+        scene_clip(img, audio, dest, dur, args.fps, w, h, i, s.get("sfx"))
         clips.append(dest)
         durs.append(dur)
         print(f"{name}: {dur:.2f}s")

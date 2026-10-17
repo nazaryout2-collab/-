@@ -25,8 +25,28 @@ BASE = "https://api.royaltechno.cc"
 MAX_IN_FLIGHT = 20
 FATAL = {400, 401, 402, 403}
 
-PROMPT_TAIL = ("Keep the hero identical to the hero reference image. Keep the location identical "
-               "to the location reference image. 16:9, no text, no watermark, no captions.")
+REF_RULES = {
+    "hero": "The character must look exactly like the HERO reference image: same face, hair, cap, colours, proportions and line style.",
+    "location": "The setting must match the LOCATION reference image: same layout, walls, furniture and objects.",
+    "style": "Match the drawing style of the STYLE reference image exactly.",
+}
+
+
+def build_prompt(project, scene):
+    """Master prompt: style block + shot type + scene + reference rules + text rule."""
+    parts = [project["style_block"]]
+    if scene.get("type"):
+        parts.append(f"SHOT TYPE: {project.get('shot_types', {}).get(scene['type'], scene['type'])}")
+    parts.append(f"SCENE: {scene['prompt']}")
+    roles = {project.get("ref_roles", {}).get(r, r) for r in scene.get("refs", [])}
+    parts += [REF_RULES[r] for r in ("hero", "location", "style") if r in roles]
+    if scene.get("text_in_image"):
+        parts.append(f'The only text in the image is exactly: "{scene["text_in_image"]}" '
+                     "in bold black capital sans-serif letters, spelled exactly as written.")
+    else:
+        parts.append("No text, letters or numbers anywhere in the image.")
+    parts.append("16:9 frame, no watermark, no borders.")
+    return "\n".join(parts)
 
 
 def headers():
@@ -134,14 +154,19 @@ def main():
     ap.add_argument("--only")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--model", default="nano-banana-pro")
+    ap.add_argument("--resolution", help="omit for the model default (cheapest); e.g. 2k, 4k")
     ap.add_argument("--refs-only", metavar="PROMPT")
     ap.add_argument("--out", default="refs/candidates/ref")
     ap.add_argument("--count", type=int, default=4)
     ap.add_argument("--ref", action="append", default=[])
     args = ap.parse_args()
 
+    base_inp = {"aspect_ratio": "landscape"}
+    if args.resolution:
+        base_inp["resolution"] = args.resolution
+
     if args.refs_only:
-        inp = {"prompt": args.refs_only, "aspect_ratio": "landscape"}
+        inp = {"prompt": args.refs_only, **base_inp}
         if args.ref:
             inp["reference_image_urls"] = [as_image_input(r) for r in args.ref]
         else:
@@ -163,8 +188,8 @@ def main():
         dest = img_dir / f"{name}.png"
         if (only and str(s["id"]) not in only) or (dest.exists() and not args.force):
             continue
-        prompt = f"{project['style_block']}\nSCENE: {s['prompt']}\n{PROMPT_TAIL}"
-        inp = {"prompt": prompt, "aspect_ratio": "landscape"}
+        prompt = build_prompt(project, s)
+        inp = {"prompt": prompt, **base_inp}
         refs = [project["refs"][k] for k in s.get("refs", [])]
         if refs:
             inp["reference_image_urls"] = [as_image_input(r) for r in refs]

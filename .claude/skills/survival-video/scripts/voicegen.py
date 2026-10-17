@@ -1,6 +1,9 @@
 """One VoiceGen task per scene -> audio/scene_###.mp3 (+ .srt).
 
-Usage: python3 voicegen.py work/<slug>/scenes.json [--only 1,2,3] [--force]
+Usage: python3 voicegen.py --list          # saved templates, own clones, favourites
+       python3 voicegen.py work/<slug>/scenes.json [--only 1,2,3] [--force]
+scenes.json "voice" takes either {"template_id": ...} (preferred: the user's saved
+template carries voice, model and settings) or {"voice_id": ..., "model_id": ..., "speed": ...}.
 Key: env VOICEGEN_API_KEY.
 """
 import argparse
@@ -36,18 +39,23 @@ def create_task(scene, voice, state):
     client_id = state.setdefault(sid, {}).setdefault("client_task_id", str(uuid.uuid4()))
     body = {
         "text": scene["text"],
-        "voice_id": voice["voice_id"],
-        "voice_engine": "cartesia",
-        "model_id": voice.get("model_id", "sonic-3.6"),
-        "voice_engine_settings": {"speed": voice.get("speed", 100), "volume": voice.get("volume", 100)},
         "filename": scene_name(scene["id"]) + ".mp3",
         "result_format": "single",
         "include_timestamps": True,
         "timestamps_granularity": "word",
         "client_task_id": client_id,
     }
-    if voice.get("voice_source"):
-        body["voice_source"] = voice["voice_source"]
+    if voice.get("template_id"):
+        body["template_id"] = voice["template_id"]
+    else:
+        body.update({
+            "voice_id": voice["voice_id"],
+            "voice_engine": "cartesia",
+            "model_id": voice.get("model_id", "sonic-3.6"),
+            "voice_engine_settings": {"speed": voice.get("speed", 100), "volume": voice.get("volume", 100)},
+        })
+        if voice.get("voice_source"):
+            body["voice_source"] = voice["voice_source"]
     r = requests.post(BASE + "/api/v1/client/tasks", headers=headers(), json=body, timeout=60)
     if r.status_code in (400, 401, 403, 404, 422):
         sys.exit(f"scene {sid}: {r.status_code} {r.text[:300]}")
@@ -65,12 +73,31 @@ def download(url, dest):
                 f.write(block)
 
 
+def list_voices():
+    for title, path in [("TEMPLATES", "/api/v1/client/templates"),
+                        ("OWN CLONES", "/api/v1/client/custom-voices"),
+                        ("FAVOURITES", "/api/v1/client/favorite-voices")]:
+        r = requests.get(BASE + path, headers=headers(), timeout=30)
+        print(f"== {title} ({r.status_code})")
+        if not r.ok:
+            continue
+        data = r.json()
+        items = data if isinstance(data, list) else next(
+            (v for v in data.values() if isinstance(v, list)), [])
+        for it in items:
+            print(" ", {k: it.get(k) for k in ("id", "voice_id", "name", "model_id", "language") if it.get(k)})
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("scenes")
+    ap.add_argument("scenes", nargs="?")
+    ap.add_argument("--list", action="store_true", help="show templates/clones/favourites and exit")
     ap.add_argument("--only", help="comma-separated scene ids")
     ap.add_argument("--force", action="store_true", help="regenerate existing audio")
     args = ap.parse_args()
+    if args.list:
+        list_voices()
+        return
 
     root, project = load_project(args.scenes)
     audio_dir = root / "audio"
