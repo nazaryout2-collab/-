@@ -129,6 +129,16 @@ Wind is not a constant bed: only in outdoor scenes (soft in calm outdoor moments
 the cave, in close-ups, diagrams or quiet tense moments — there use fire crackle / cave room
 tone or silence. Every growl or roar in one scene sequence is a different file.
 
+Levels are set by hand from measured loudness, never by a compressor (source files differ
+by up to 10 dB, so equal dB settings do not sound equal):
+- Music: set `db = target − track LUFS`, target ≈ −45.5 LUFS (predator / ending ≈ −48).
+- Continuous bed (music + ambience) per section ≈ −43 LUFS, calm −45..−47, storm ≈ −37.
+  Check with `sound_design.py <scenes> --video final.mp4 --bed-only` on a copy of
+  scenes.json without one-shots, then `ebur128` per section.
+- One-shots by max momentary loudness (file M-max + db): big roars/attacks ≈ −14,
+  tense hits and heartbeats ≈ −17, actions ≈ −21, small details (steps, twigs) ≈ −25.
+- Music: cinematic documentary / mystery / suspense. No meditation, zen or fairy-tale tracks.
+
 ## Sound library
 
 Downloaded packs live in `sfx/<category>/` (not generated). `sfx/INDEX.md` lists each

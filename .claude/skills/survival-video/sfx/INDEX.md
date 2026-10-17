@@ -69,11 +69,18 @@ Mixkit Sound Effects Free License (commercial use incl. YouTube, no attribution)
 ### Added for v6
 | File | Length | Description |
 |---|---|---|
-| sfx/music/music_rest_now.mp3 | 5:00 | Rest Now (Mixkit music): calm ambient pads, no melody |
-| sfx/music/music_voxscape.mp3 | 5:00 | Voxscape (Mixkit music): slow ambient drone |
 | mixkit/branch_break.mp3 | 1.2 s | tree branch breaking (Mixkit 2943) |
 | mixkit/twig_break.mp3 | 1.2 s | twig snapping (Mixkit 2945) |
 | mixkit/wood_hard_hit.mp3 | 0.4 s | hard wooden knock (Mixkit 2182) |
 | mixkit/wood_scrape_creak.mp3 | 2.0 s | creaky wood scraping (Mixkit 3157) |
 
 Removed: music_calm_vastness (the user found it sounded like Harry Potter).
+
+### Music added for v8 (Mixkit Stock Music Free License)
+| File | Length | Loudness | Description |
+|---|---|---|---|
+| sfx/music/music_fallen.mp3 | 4:55 | -14.6 LUFS | Fallen (Asper): documentary / mystery |
+| sfx/music/music_selpan.mp3 | 3:14 | -11.2 LUFS | Selpan: documentary drone |
+| sfx/music/music_goats.mp3 | 3:32 | -20.1 LUFS | Goats: sparse documentary horror (predator scenes) |
+
+Rest Now and Voxscape removed (sounded like meditation music).

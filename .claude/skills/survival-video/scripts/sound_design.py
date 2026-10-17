@@ -51,6 +51,7 @@ def main():
     ap.add_argument("scenes")
     ap.add_argument("--video", default="body.mp4")
     ap.add_argument("--out", default="final_sd.mp4")
+    ap.add_argument("--bed-only", action="store_true", help="write the bed without the voice to sound_bed.wav, for level checks")
     args = ap.parse_args()
 
     root, project = load_project(args.scenes)
@@ -89,7 +90,7 @@ def main():
     graph += f";{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0[bed]"
     # No ducking: pumping the bed between phrases made the wind swell every few seconds
     # and sound like a short loop. Bed levels are set relative to the voice instead.
-    graph += f";[0:a]volume={vgain:.2f}dB[voice]"
+    graph += f";[0:a]volume={0 if args.bed_only else f'{vgain:.2f}dB'}[voice]"
     graph += ";[voice][bed]amix=inputs=2:duration=first:normalize=0,aresample=48000[a]"
 
     script = root / "sound_graph.txt"
@@ -97,6 +98,10 @@ def main():
     premix = root / "sound_premix.wav"
     subprocess.run(["ffmpeg", "-y", "-v", "error", *inputs, "-filter_complex_script", str(script),
                     "-map", "[a]", "-t", f"{total:.3f}", "-c:a", "pcm_s24le", str(premix)], check=True)
+    if args.bed_only:
+        premix.replace(root / "sound_bed.wav")
+        print(root / "sound_bed.wav")
+        return
     # Static gain to FINAL_LUFS plus a peak limiter. Single-pass loudnorm is dynamic: it lifts
     # the pauses between phrases, so any cut to the wind or music was partly undone.
     gain = FINAL_LUFS - integrated_lufs(premix)
