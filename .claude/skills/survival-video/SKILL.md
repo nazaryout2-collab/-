@@ -50,7 +50,11 @@ structure taken from the transcripts). Wait for the user's approval.
 }
 ```
 
-- One image per scene; scene length from the measured pacing.
+- One image per scene. Cut slightly faster than the reference: target ≈ 85% of its
+  measured average seconds per image (words per scene = that time × narration words/s).
+- The hook (before the first time-skip) is shorter than the reference's: ~20–25 s.
+- Every character in a video (hero, other people, Neanderthals) is drawn in the same
+  stick-figure style; only the hero carries his unique feature (`refs/hero.png`).
 - `refs`: `hero` whenever the hero is visible; the location ref whenever the scene is in a
   recurring place; none for isolated objects/diagrams. Decide per scene.
 - `text_in_image`: only where the reference uses on-screen text (numbers, labels, warnings).
