@@ -124,6 +124,9 @@ No picture re-render (video stream is copied). It reads `"sound": {"ambience": [
 on the real scene timeline, ducks the bed under the narration, brings the voice to −16 LUFS
 and the master to −14 LUFS (YouTube). Check bed vs voice per section with `volumedetect`:
 speech sections ≈ 8–12 dB under the voice, storm/blizzard ≈ 5–7 dB under.
+Wind is not a constant bed: only in outdoor scenes (soft in calm outdoor moments), none in
+the cave, in close-ups, diagrams or quiet tense moments — there use fire crackle / cave room
+tone or silence. Every growl or roar in one scene sequence is a different file.
 
 ## Sound library
 

@@ -65,4 +65,4 @@ Mixkit Sound Effects Free License (commercial use incl. YouTube, no attribution)
 ### Commons (CC0)
 | File | Length | Description |
 |---|---|---|
-| commons/mammoth_trumpet.mp3 | 3.7 s | elephant trumpeting (Wikimedia Commons "Elephant voice - trumpeting.ogg", CC0), pitched down 18% + echo for a mammoth |
+| commons/mammoth_herd_trumpet.mp3 | 5.0 s | three mammoths trumpeting one after another, built from Wikimedia Commons "Elephant voice - trumpeting.ogg" (CC0): pitched down, stretched, echo |
