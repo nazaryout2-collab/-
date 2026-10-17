@@ -26,9 +26,13 @@ MAX_IN_FLIGHT = 20
 FATAL = {400, 401, 402, 403}
 
 REF_RULES = {
-    "hero": "The character must look exactly like the HERO reference image: same face, hair, cap, colours, proportions and line style.",
-    "location": "The setting must match the LOCATION reference image: same layout, walls, furniture and objects.",
-    "style": "Match the drawing style of the STYLE reference image exactly.",
+    "hero": ("The hero must look exactly like the HERO reference image: same head shape, hair, headwear, clothing, "
+             "colours, proportions and line style. His eyes are ALWAYS two small solid black dots exactly like the "
+             "reference: no white eyeballs, no pupils, no irises, no eyelids, no eye outlines. Show emotion only with "
+             "eyebrow lines, the mouth and body pose."),
+    "location": "The setting must match the LOCATION reference image: same layout, rock shapes, walls and objects.",
+    "style": ("Use the STYLE reference ONLY for line weight, colouring and shading. Do NOT copy any objects, shelves, "
+              "labels or layout from it."),
 }
 
 
