@@ -53,3 +53,16 @@ Mixkit Sound Effects Free License (commercial use incl. YouTube, no attribution)
 | sfx/music/music_dark_shadows.mp3 | Dark Shadows (music) | 106.2s | 1:46 |
 | sfx/music/music_forest_mist.mp3 | Forest Mist Whispers (music) | 150.9s | 2:31 |
 | sfx/music/music_echoes.mp3 | Echoes (music) | 226.3s | 3:46 |
+
+### Growls (one different file per scene, so wolves never repeat)
+| File | Length | Description |
+|---|---|---|
+| mixkit/wolf_growl_angry.mp3 | 3.6 s | angry, agitated growl (Mixkit 53, normalised) |
+| mixkit/wolf_snarl_big.mp3 | 5.7 s | big defensive snarl (Mixkit 50, normalised) |
+| mixkit/wolf_growl_low.mp3 | 6.3 s | low steady growl (Mixkit 56, normalised) |
+| mixkit/wolf_growl_wild.mp3 | 2.0 s | short wild-creature growl (Mixkit 1957, normalised) |
+
+### Commons (CC0)
+| File | Length | Description |
+|---|---|---|
+| commons/mammoth_trumpet.mp3 | 3.7 s | elephant trumpeting (Wikimedia Commons "Elephant voice - trumpeting.ogg", CC0), pitched down 18% + echo for a mammoth |
