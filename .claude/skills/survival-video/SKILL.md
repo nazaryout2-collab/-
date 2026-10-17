@@ -116,6 +116,15 @@ SCENE: <prompt>
 16:9 frame, no watermark, no borders.
 ```
 
+## Sound design (after the picture is assembled)
+
+`python3 scripts/sound_design.py work/<slug>/scenes.json --video final.mp4` → `final_sd.mp4`.
+No picture re-render (video stream is copied). It reads `"sound": {"ambience": [...],
+"music": [...]}` (scene ranges, looped, faded) and per-scene one-shot `"sfx"`, places them
+on the real scene timeline, ducks the bed under the narration, brings the voice to −16 LUFS
+and the master to −14 LUFS (YouTube). Check bed vs voice per section with `volumedetect`:
+speech sections ≈ 8–12 dB under the voice, storm/blizzard ≈ 5–7 dB under.
+
 ## Sound library
 
 Downloaded packs live in `sfx/<category>/` (not generated). `sfx/INDEX.md` lists each
