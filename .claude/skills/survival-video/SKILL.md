@@ -58,6 +58,11 @@ structure taken from the transcripts). Wait for the user's approval.
 - `refs`: `hero` whenever the hero is visible; the location ref whenever the scene is in a
   recurring place; none for isolated objects/diagrams. Decide per scene.
 - `text_in_image`: only where the reference uses on-screen text (numbers, labels, warnings).
+- Style ref is `refs/style_neutral.png` (never a competitor frame: its objects leak into
+  frames). For diagrams/icon scenes leave `refs` empty if an anchor object shows up.
+- Known failure modes to check on contact sheets (only when the user asks for a check):
+  hero drawn twice, eyes with whites/pupils, coloured face from "firelight", modern tools,
+  objects copied from a reference, unrequested or misspelt text.
 - `sfx`: pick files from `sfx/INDEX.md` where the reference would have a sound.
 
 ## 3. Choices to ask the user (every new video)
