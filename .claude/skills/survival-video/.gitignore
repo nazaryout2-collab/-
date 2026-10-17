@@ -1,3 +1,4 @@
 work/
 refs/candidates/
 sfx/**/*.wav
+__pycache__/
