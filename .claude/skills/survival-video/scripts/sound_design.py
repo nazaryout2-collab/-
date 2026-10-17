@@ -87,9 +87,10 @@ def main():
     vgain = VOICE_LUFS - integrated_lufs(video)
     graph = ";".join(chains)
     graph += f";{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0[bed]"
-    graph += f";[0:a]volume={vgain:.2f}dB,asplit=2[voice][key]"
-    graph += ";[bed][key]sidechaincompress=threshold=0.04:ratio=3:attack=30:release=600[bedd]"
-    graph += (";[voice][bedd]amix=inputs=2:duration=first:normalize=0,"
+    # No ducking: pumping the bed between phrases made the wind swell every few seconds
+    # and sound like a short loop. Bed levels are set relative to the voice instead.
+    graph += f";[0:a]volume={vgain:.2f}dB[voice]"
+    graph += (";[voice][bed]amix=inputs=2:duration=first:normalize=0,"
               f"loudnorm=I={FINAL_LUFS}:TP=-1.5:LRA=11,aresample=48000[a]")
 
     script = root / "sound_graph.txt"
