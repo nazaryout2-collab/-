@@ -124,7 +124,7 @@ def run_jobs(items, model, poll=5):
     while queue or inflight:
         while queue and len(inflight) < MAX_IN_FLIGHT:
             name, inp, dests = queue[0]
-            idem = str(uuid.uuid5(uuid.NAMESPACE_URL, json.dumps([model, inp], sort_keys=True)))
+            idem = str(uuid.uuid5(uuid.NAMESPACE_URL, json.dumps([model, name, inp], sort_keys=True)))
             job = submit({"model": model, "input": inp}, idem)
             if job is None:  # queue_full: wait for a slot
                 break
