@@ -1,6 +1,7 @@
 """Lay the sound design over an assembled video without re-rendering the picture.
 
-Usage: python3 sound_design.py work/<slug>/scenes.json [--video body.mp4] [--out final_sd.mp4]
+Usage: python3 sound_design.py work/<slug>/scenes.json --video final.mp4 [--parts sfx,music,ambience] [--out final_sd.mp4]
+--parts picks the layers the user asked for (default: all three).
 
 scenes.json:
   "sound": {
@@ -51,6 +52,8 @@ def main():
     ap.add_argument("scenes")
     ap.add_argument("--video", default="body.mp4")
     ap.add_argument("--out", default="final_sd.mp4")
+    ap.add_argument("--parts", default="sfx,music,ambience",
+                    help="comma list of layers to add: sfx (one-shots), music, ambience (wind, fire, room tone)")
     ap.add_argument("--bed-only", action="store_true", help="write the bed without the voice to sound_bed.wav, for level checks")
     args = ap.parse_args()
 
@@ -73,19 +76,24 @@ def main():
             f"volume={db}dB,adelay={ms}|{ms}[s{k}]")
         labels.append(f"[s{k}]")
 
+    parts = {p.strip() for p in args.parts.split(",") if p.strip()}
     snd = project.get("sound", {})
-    for first, last, path, db in snd.get("ambience", []):
+    for first, last, path, db in (snd.get("ambience", []) if "ambience" in parts else []):
         add(path, starts[first], ends[last] - starts[first], db, True, BED_FADE, BED_FADE)
-    for first, last, path, db in snd.get("music", []):
+    for first, last, path, db in (snd.get("music", []) if "music" in parts else []):
         add(path, starts[first], ends[last] - starts[first], db, True, MUSIC_FADE, MUSIC_FADE)
     for s in scenes:
-        for fx in s.get("sfx", []):
+        for fx in (s.get("sfx", []) if "sfx" in parts else []):
             t0 = starts[s["id"]] + float(fx.get("at", 0))
             length = float(fx.get("len", media_duration(src(fx["file"]))))
             add(fx["file"], t0, length, fx.get("db", EFFECTS["sfx_db"]), False, 0.05, min(0.4, length / 3))
 
     # Bring the narration to VOICE_LUFS first, so every bed level is relative to the voice.
     vgain = VOICE_LUFS - integrated_lufs(video)
+    if not labels:  # nothing chosen: a silent bed keeps the graph the same
+        inputs += ["-f", "lavfi", "-t", f"{total:.3f}", "-i", "anullsrc=r=48000:cl=stereo"]
+        chains.append(f"[{len(labels) + 1}:a]anull[s1]")
+        labels.append("[s1]")
     graph = ";".join(chains)
     graph += f";{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0[bed]"
     # No ducking: pumping the bed between phrases made the wind swell every few seconds

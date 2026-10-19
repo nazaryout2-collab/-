@@ -164,7 +164,7 @@ can check. The full run is done by the user's command:
 python3 scripts/voicegen.py work/<slug>/scenes.json
 python3 scripts/images.py work/<slug>/scenes.json [--resolution 2k]
 python3 scripts/assemble.py work/<slug>/scenes.json
-python3 scripts/sound_design.py work/<slug>/scenes.json --video final.mp4
+python3 scripts/sound_design.py work/<slug>/scenes.json --video final.mp4 --parts <what the user chose>
 ```
 
 When the user asks you to produce the whole video yourself, render it in parts and send
@@ -194,6 +194,11 @@ unless the user asks, and never pass ad-hoc overrides.
 Output `work/<slug>/final.mp4`.
 
 ## Sound design (after the picture is assembled)
+
+Only when the user asks for it. After `final.mp4` is ready, send it and ask: no sound
+design, effects only, or effects with music and ambience — and whether wind is wanted.
+Then run with the chosen layers: `--parts sfx`, `--parts sfx,music`, `--parts sfx,music,ambience`
+(for "no wind" leave the wind rows out of `sound.ambience`, keep fire / room tone).
 
 Sound files are not kept in the repository. For every video download what it needs from
 Mixkit (Sound Effects / Stock Music Free License, commercial use on YouTube allowed) or
