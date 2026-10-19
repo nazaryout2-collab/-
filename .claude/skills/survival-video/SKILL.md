@@ -18,14 +18,16 @@ Talk to the user in Russian; the narration itself is in English.
 
 ## Reference material
 
-- `style/reference.mp4` — a full competitor video (pacing, sound).
+- `style/reference.mp4` — the competitor fragment the user supplied (picture, pacing, sound);
+  the style reference collage is cut from it.
 - `style/transcripts/` — both parts of the same competitor story ("Bunker Survival 1 Year",
   Part 1 and Part 2), with timestamps.
 - `style/style.json` — the channel's fixed picture style: `style_block`, `shot_types`,
   `location_prompt`. Do not rewrite it; change it only when the user asks.
 - `refs/hero.png` — the hero (M1), reused in every video.
-- `refs/style_neutral.png` — style anchor (line weight, colouring, shading) for locations
-  and object scenes.
+- `refs/style_competitor.jpg` — style reference: a 2×2 collage of competitor frames from
+  `style/reference.mp4` without their character (line weight, colouring, shading). Attach
+  it to every scene; the STYLE rule forbids copying its objects.
 
 ## 0. Session start: analyse the script (always, before writing anything)
 
@@ -65,7 +67,7 @@ User preferences that always apply:
    that appears in 3+ scenes gets its own location reference; one-off places do not.
 2. For each one: `python3 scripts/images.py --location <name> "<what the place looks like:
    layout, rocks, walls, key objects that must stay the same>"` → 4 candidates in
-   `refs/candidates/loc_<name>_N.png` (fixed style + `refs/style_neutral.png`).
+   `refs/candidates/loc_<name>_N.png` (fixed style + `refs/style_competitor.jpg`).
 3. Show the candidates to the user; the chosen one becomes `refs/loc_<name>.png`.
    Locations belong to one video (`refs/loc_*` is git-ignored).
 4. If the story changes a place later (a wall gets built, a fire goes out), describe the
@@ -79,7 +81,7 @@ User preferences that always apply:
   "voice": {"template_id": "chosen by the user"},
   "resolution": null,
   "setting": "one line: era, landscape and its colours for this video (the style itself is fixed)",
-  "refs": {"hero": "refs/hero.png", "style": "refs/style_neutral.png", "<place>": "refs/loc_<place>.png"},
+  "refs": {"hero": "refs/hero.png", "style": "refs/style_competitor.jpg", "<place>": "refs/loc_<place>.png"},
   "ref_roles": {"hero": "hero", "style": "style", "<place>": "location"},
   "scenes": [
     {"id": 1, "text": "narration", "type": "<shot type>",
@@ -96,8 +98,8 @@ User preferences that always apply:
 - `text_in_image`: only where the reference uses on-screen text.
 - `type`: one of the fixed shot types in `style/style.json` (`hero_location`, `object`,
   `big_text`, `closeup`).
-- `style` ref for object / diagram scenes without the hero; leave `refs` empty if an
-  anchor object from the style ref shows up in them.
+- `style` ref in every scene (with the hero and location refs where they apply). If an
+  object from the style collage shows up in a frame, regenerate that scene without it.
 - Never use a competitor frame as a reference image: its objects leak into the frames.
 
 ## 4. Choices to ask the user (every new video)
@@ -110,7 +112,7 @@ User preferences that always apply:
 ## 5. New hero (only when the user asks for one)
 
 `python3 scripts/images.py --refs-only "<prompt>" --out refs/candidates/<name> --count 4
---ref refs/style_neutral.png`. Show the candidates, the user picks; save as
+--ref refs/style_competitor.jpg`. Show the candidates, the user picks; save as
 `refs/hero.png`. The hero has one unique feature; everyone else is a plain stick figure.
 
 ## 6. Images: how one image request is built

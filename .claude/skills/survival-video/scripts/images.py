@@ -40,7 +40,7 @@ REF_RULES = {
 
 
 STYLE = json.loads((SKILL_DIR / "style" / "style.json").read_text())
-STYLE_REF = "refs/style_neutral.png"
+STYLE_REF = "refs/style_competitor.jpg"
 
 
 def build_prompt(project, scene):
