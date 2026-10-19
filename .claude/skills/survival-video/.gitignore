@@ -2,3 +2,7 @@ work/
 refs/candidates/
 sfx/**/*.wav
 __pycache__/
+sfx/**/*.mp3
+sfx/**/*.ogg
+refs/loc_*
+refs/style_objects.jpg
