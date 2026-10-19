@@ -8,6 +8,6 @@
   "closeup": "close-up of the hero's face, upper body or hands, plain light background"
  },
  "location_prompt": "Location design in exactly the same drawing style as the STYLE reference image, no characters: {description}. Wide shot, everything drawn simply, lots of empty space. 16:9 frame, no text, no watermark.",
- "quality_rule": "Colours are clear, clean and full, like in the STYLE reference. The picture is never faded, washed-out, greyish, hazy, dusty, low-contrast or desaturated, whatever the time of day.",
+ "quality_rule": "Colours are clear, clean and full, like in the STYLE reference. The picture is never faded, washed-out, greyish, hazy, dusty, low-contrast or desaturated, whatever the time of day. But it is not too bright either: no neon, oversaturated or glowing colours, no overexposed light — natural, calm colour like the STYLE reference.",
  "character_prompt": "Character design sheet in exactly the same drawing style as the STYLE reference: {description}. One single full-body view, side-on or three-quarter, neutral pose, plain white background, nothing else in the frame. 16:9 frame, no text, no watermark."
 }
