@@ -16,6 +16,13 @@ everything, run only the small test the user approves, and hand over the exact c
 
 Talk to the user in Russian; the narration itself is in English.
 
+**Disagreements and mistakes in this file: report, never fix silently.** If, after analysing
+the reference video and transcripts (or at any later step), you disagree with a rule here,
+or you find something inaccurate, outdated or contradictory in this file or in the
+scripts, tell the user first: what the rule says, what you found, what you propose. Keep
+following the current rule until the user decides; change the file only after the user
+agrees.
+
 ## New session setup (fresh container)
 
 - Python packages: `pip install requests pillow`; FFmpeg must be installed (`ffmpeg -version`).
