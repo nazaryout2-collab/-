@@ -1,0 +1,11 @@
+{
+ "_note": "Fixed picture style of the channel. Identical in every video; change only when the user asks.",
+ "style_block": "STYLE: clean 2D vector cartoon illustration, thin uniform black outlines, flat colors with very light soft shading, plain white or very light background, lots of empty space, simple educational-explainer composition. All people are stick figures with round plain white heads and small solid black dot eyes (no eye whites, no pupils, no eyelids); emotion is shown only with eyebrow lines, the mouth and body pose. Other people (tribes, Neanderthals, strangers) are drawn in the same stick-figure style; only the hero has his unique look from the HERO reference. Animals and dinosaurs are drawn simply in the same cartoon line style. Muted natural colors; orange and red are used only as accents for fire and danger.",
+ "shot_types": {
+  "hero_location": "the hero inside the environment, wide or medium shot, eye level, environment drawn simply",
+  "object": "a single object, small group of objects or simple diagram isolated on a plain white background, no character",
+  "big_text": "large bold text as the main element on a plain white background with one small supporting illustration",
+  "closeup": "close-up of the hero's face, upper body or hands, plain light background"
+ },
+ "location_prompt": "Location design in exactly the same drawing style as the STYLE reference image, no characters: {description}. Wide shot, everything drawn simply, lots of empty space. 16:9 frame, no text, no watermark."
+}

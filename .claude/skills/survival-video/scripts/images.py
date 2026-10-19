@@ -2,7 +2,9 @@
 
 Usage:
   python3 images.py work/<slug>/scenes.json [--only 1,2,3] [--force] [--model nano-banana-pro]
+  python3 images.py --location cave "a narrow cave mouth high on a snowy hill, ..." [--count 4]
   python3 images.py --refs-only "prompt text" --out refs/candidates/hero --count 4 [--ref refs/x.png]
+The picture style is fixed in style/style.json and is the same in every video.
 Key: env ROYALTECHNO_API_KEY. Follows the API's client rules (poll 5 s with ETag,
 <= 20 in flight, Idempotency-Key per job, stop on 4xx, retry only 429/503).
 """
@@ -37,11 +39,17 @@ REF_RULES = {
 }
 
 
+STYLE = json.loads((SKILL_DIR / "style" / "style.json").read_text())
+STYLE_REF = "refs/style_neutral.png"
+
+
 def build_prompt(project, scene):
-    """Master prompt: style block + shot type + scene + reference rules + text rule."""
-    parts = [project["style_block"]]
+    """Master prompt: fixed style + setting + shot type + scene + reference rules + text rule."""
+    parts = [STYLE["style_block"]]
+    if project.get("setting"):
+        parts.append(f"SETTING: {project['setting']}")
     if scene.get("type"):
-        parts.append(f"SHOT TYPE: {project.get('shot_types', {}).get(scene['type'], scene['type'])}")
+        parts.append(f"SHOT TYPE: {STYLE['shot_types'].get(scene['type'], scene['type'])}")
     parts.append(f"SCENE: {scene['prompt']}")
     roles = {project.get("ref_roles", {}).get(r, r) for r in scene.get("refs", [])}
     parts += [REF_RULES[r] for r in ("hero", "location", "style") if r in roles]
@@ -164,11 +172,19 @@ def main():
     ap.add_argument("--out", default="refs/candidates/ref")
     ap.add_argument("--count", type=int, default=4)
     ap.add_argument("--ref", action="append", default=[])
+    ap.add_argument("--location", nargs=2, metavar=("NAME", "DESCRIPTION"),
+                    help="location reference candidates -> refs/candidates/loc_<NAME>_N.png")
     args = ap.parse_args()
 
     base_inp = {"aspect_ratio": "landscape"}
     if args.resolution:
         base_inp["resolution"] = args.resolution
+
+    if args.location:
+        name, desc = args.location
+        args.refs_only = STYLE["style_block"] + "\n" + STYLE["location_prompt"].format(description=desc)
+        args.out = f"refs/candidates/loc_{name}"
+        args.ref = args.ref or [STYLE_REF]
 
     if args.refs_only:
         inp = {"prompt": args.refs_only, **base_inp}

@@ -5,26 +5,32 @@ description: Produce an animated "X Survival N Days/1 Year" YouTube video (prehi
 
 # Survival video pipeline
 
-The user supplies every topic. Nothing about ideas, script style or picture style is
-stored here: you derive all of it yourself from the reference material at the start of
-every session (step 0) and write it down for that session only.
+The user supplies every topic. Nothing about ideas or script style is stored here: you
+analyse the competitor's script yourself at the start of every session (step 0) and write
+your findings down for that session only. The picture style is the opposite: it is fixed
+in `style/style.json` and never changes between videos.
 
 Limits matter (the user is on a $20 plan): never look at generated images unless the
-user asks, never run the full generation yourself — prepare everything, run only the
-small test the user approves, and hand over the exact commands for the full run.
+user asks, never run the full generation unless the user asks for it — prepare
+everything, run only the small test the user approves, and hand over the exact commands.
+
+Talk to the user in Russian; the narration itself is in English.
 
 ## Reference material
 
-- `style/reference.mp4` — a full competitor video (picture, pacing, sound).
+- `style/reference.mp4` — a full competitor video (pacing, sound).
 - `style/transcripts/` — both parts of the same competitor story ("Bunker Survival 1 Year",
   Part 1 and Part 2), with timestamps.
-- `refs/` — the channel's own image references: `hero.png` (the hero, reused in every
-  video) and `style_neutral.png` (style anchor: line weight, colouring, shading).
+- `style/style.json` — the channel's fixed picture style: `style_block`, `shot_types`,
+  `location_prompt`. Do not rewrite it; change it only when the user asks.
+- `refs/hero.png` — the hero (M1), reused in every video.
+- `refs/style_neutral.png` — style anchor (line weight, colouring, shading) for locations
+  and object scenes.
 
-## 0. Session start: analyse the references (always, before writing anything)
+## 0. Session start: analyse the script (always, before writing anything)
 
-1. `python3 scripts/analyze_reference.py` → frames of `style/reference.mp4` in
-   `work/ref_frames/`, two contact sheets, pacing stats. Look at the contact sheets once.
+1. `python3 scripts/analyze_reference.py` → pacing stats of `style/reference.mp4`
+   (seconds per image). The picture style is not analysed: it is fixed.
 2. Read both transcripts completely, as one story, not as separate texts.
 3. Write `work/style_notes.md` (session-only, not committed) with your own findings:
    - **The script as a whole**: the arc from the first line to the last line of Part 2;
@@ -39,10 +45,7 @@ small test the user approves, and hand over the exact commands for the full run.
    - **Narration**: person and tense, hook in the first 30 s, numbers and supplies, time
      markers and escalation rhythm, sentence length, words per minute.
    - **Pacing**: seconds per image → words per scene.
-   - **Picture**: line weight, palette, how characters and backgrounds are drawn, which
-     shot types occur and how often, on-screen text (font, colour, when it appears).
-   - `style_block` and `shot_types` for the master prompt (see below), written by you
-     from this analysis.
+   - **On-screen text**: where the reference puts numbers, labels or warnings in the frame.
 
 ## 1. Script
 
@@ -56,16 +59,27 @@ User preferences that always apply:
 - Images change slightly faster than the reference: ≈ 85% of its measured average
   seconds per image.
 
-## 2. Scene table → `work/<slug>/scenes.json`
+## 2. Locations (every new video, right after the script is approved)
+
+1. List the places that recur in the script (shelter, cave, camp, river crossing…). A place
+   that appears in 3+ scenes gets its own location reference; one-off places do not.
+2. For each one: `python3 scripts/images.py --location <name> "<what the place looks like:
+   layout, rocks, walls, key objects that must stay the same>"` → 4 candidates in
+   `refs/candidates/loc_<name>_N.png` (fixed style + `refs/style_neutral.png`).
+3. Show the candidates to the user; the chosen one becomes `refs/loc_<name>.png`.
+   Locations belong to one video (`refs/loc_*` is git-ignored).
+4. If the story changes a place later (a wall gets built, a fire goes out), describe the
+   change in the scene prompt; do not make a new location ref for it.
+
+## 3. Scene table → `work/<slug>/scenes.json`
 
 ```json
 {
   "title": "Topic Survival 1 Year",
   "voice": {"template_id": "chosen by the user"},
   "resolution": null,
-  "style_block": "written by you in step 0",
-  "shot_types": {"<type>": "how this kind of frame is composed"},
-  "refs": {"hero": "refs/hero.png", "style": "refs/style_neutral.png", "<place>": "refs/<place>.png"},
+  "setting": "one line: era, landscape and its colours for this video (the style itself is fixed)",
+  "refs": {"hero": "refs/hero.png", "style": "refs/style_neutral.png", "<place>": "refs/loc_<place>.png"},
   "ref_roles": {"hero": "hero", "style": "style", "<place>": "location"},
   "scenes": [
     {"id": 1, "text": "narration", "type": "<shot type>",
@@ -80,21 +94,26 @@ User preferences that always apply:
 - `refs`: `hero` whenever the hero is visible; a location ref whenever the scene is in a
   recurring place; none for isolated objects/diagrams. Decide per scene.
 - `text_in_image`: only where the reference uses on-screen text.
+- `type`: one of the fixed shot types in `style/style.json` (`hero_location`, `object`,
+  `big_text`, `closeup`).
+- `style` ref for object / diagram scenes without the hero; leave `refs` empty if an
+  anchor object from the style ref shows up in them.
 - Never use a competitor frame as a reference image: its objects leak into the frames.
 
-## 3. Choices to ask the user (every new video)
+## 4. Choices to ask the user (every new video)
 
-- Voice: run `python3 scripts/voicegen.py --list`, show the saved templates, the user picks.
+- Voice: run `python3 scripts/voicegen.py --list`, show the saved templates, the user picks
+  (last time: "Ниша финансы 1.2", template `2d0c42ad-885b-4833-91cf-e8f697c2b4d7`).
 - Image resolution: offer the model default (cheapest, $0.02) or `2k`/`4k` (2x/4x).
   Default to the cheapest unless the user chooses otherwise.
 
-## 4. References (once per new hero / location)
+## 5. New hero (only when the user asks for one)
 
-`python3 scripts/images.py --refs-only "<prompt>" --out refs/candidates/<name> --count 4`
-(add `--ref refs/style_neutral.png` to anchor the style). The user picks; save as
-`refs/<name>.png` and reuse it in later videos.
+`python3 scripts/images.py --refs-only "<prompt>" --out refs/candidates/<name> --count 4
+--ref refs/style_neutral.png`. Show the candidates, the user picks; save as
+`refs/hero.png`. The hero has one unique feature; everyone else is a plain stick figure.
 
-## 5. Images: how one image request is built
+## 6. Images: how one image request is built
 
 `scripts/images.py` sends one job per scene to RoyalTechno (`nano-banana-pro`) with:
 - `prompt` = the master prompt below;
@@ -104,8 +123,9 @@ User preferences that always apply:
 Master prompt (`build_prompt`):
 
 ```
-<style_block>
-SHOT TYPE: <shot_types[type]>
+<style_block from style/style.json>
+SETTING: <setting of this video>
+SHOT TYPE: <shot_types[type] from style/style.json>
 SCENE: <scene prompt>
 <one rule per reference role used in the scene: hero / location / style>
 <exact text rule | "No text, letters or numbers anywhere in the image.">
@@ -128,7 +148,7 @@ regenerating the scene with `--only <ids> --force` after tightening its prompt o
 - unrequested, extra or misspelt text;
 - for diagram / icon scenes: an anchor object from the style ref appears — leave `refs` empty.
 
-## 6. Test, then hand over
+## 7. Test, then hand over
 
 Run only a 3–5 scene test (`--only 1,2,3`) of voice and images and assemble it, so the user
 can check. The full run is done by the user's command:
@@ -139,6 +159,17 @@ python3 scripts/images.py work/<slug>/scenes.json [--resolution 2k]
 python3 scripts/assemble.py work/<slug>/scenes.json
 python3 scripts/sound_design.py work/<slug>/scenes.json --video final.mp4
 ```
+
+When the user asks you to produce the whole video yourself, render it in parts and send
+part 1 first so the user can check it before you continue.
+
+### Sending videos to the user
+
+Files above ~100 MB do not download on the user's phone. Send:
+- the full video re-encoded to 720p (`scale=1280:720`, CRF 25), usually 60–75 MB;
+- if 1080p is needed, the 1080p file cut into ~3.5-minute parts with
+  `-c copy -f segment -segment_time 205` (each 55–70 MB);
+- for a sound or picture fix, also a short fragment (20–90 s) of the changed place.
 
 ## Effects (fixed — approved on the 40 s test, identical in every video)
 
@@ -177,6 +208,13 @@ cut to wind or music.
   silence.
 - Every growl or roar in one scene sequence is a different file.
 - Tense moments get slightly louder one-shots than calm ones; the ending is quieter.
+- Beds must be long files (30 s and more) or layered: a short loop is heard as a repeat.
+- A key creature sound (a mammoth call, a roar) lasts about its scene, not a short blip.
+- Footsteps only where the narration is about walking, and never several in a row.
+- When the user asks for "N% quieter/louder", that is amplitude: dB = 20·log10(1 ± N/100)
+  (−25% ≈ −2.5 dB). Apply it to the current level, then measure the result (bed level in
+  the pauses between phrases, per section) and show the numbers. If the user says nothing
+  changed, also send a short before/after clip (same 15 s, old then new).
 - Music: cinematic documentary / mystery / suspense. No meditation, zen or fairy-tale tracks.
 
 Levels are set by hand from measured loudness, never by a compressor (source files differ
