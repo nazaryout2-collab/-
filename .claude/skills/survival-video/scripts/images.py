@@ -33,11 +33,12 @@ REF_RULES = {
              "proportions or line style, in every pose, angle and emotion. Every feature visible on the reference stays "
              "visible. Draw the hero only ONCE in the frame."),
     "location": "The setting must match the LOCATION reference image: same layout, rock shapes, walls and objects.",
-    "style": ("The STYLE reference image is given ONLY to understand the drawing style: line weight, colouring and "
-              "shading. Do NOT transfer anything from it into this picture: no objects, machines, tanks, pipes, shelves, "
-              "buildings, labels, text or layout. Ignore the person in the STYLE reference completely: never take his "
-              "cap, hair, face, clothes or any other part of his look; the only hero is the one in the HERO reference. "
-              "Draw only what the SCENE describes."),
+    "style": ("The image labelled STYLE REFERENCE is a sample of the drawing style only: line weight, flat colouring "
+              "and shading. Do NOT copy from it the brightness, colour intensity, lighting, time of day or weather: take "
+              "those only from the SCENE description. Do NOT transfer anything from it into this picture: no objects, "
+              "machines, tanks, pipes, shelves, buildings, labels, text or layout. Ignore every person in it completely: "
+              "never take a cap, hair, face, clothes or any other part of a look from it; the only hero is the one in the "
+              "HERO reference. Draw only what the SCENE describes."),
 }
 
 

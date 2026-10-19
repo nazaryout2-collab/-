@@ -25,10 +25,11 @@ Talk to the user in Russian; the narration itself is in English.
 - `style/style.json` — the channel's fixed picture style: `style_block`, `shot_types`,
   `location_prompt`. Do not rewrite it; change it only when the user asks.
 - `refs/hero.png` — the hero (M1), reused in every video.
-- `refs/style_competitor.jpg` — style reference: a 2×2 collage of ordinary competitor scenes
-  from `style/reference.mp4` (outdoors, interior, character with an object and text, a
-  diagram). The STYLE rule says: style only, copy no objects, and ignore their character
-  completely — the only hero is `refs/hero.png`.
+- `refs/style_competitor.jpg` — style reference labelled "STYLE REFERENCE": a 3×2 collage of
+  competitor frames from `style/reference.mp4` and our own approved frames (sources in
+  `style/ref_sources/`). The STYLE rule says: drawing style only — no brightness, colour
+  intensity, lighting or time of day from it, no objects, and ignore every person in it;
+  the only hero is `refs/hero.png`.
 
 ## 0. Session start: analyse the script (always, before writing anything)
 
