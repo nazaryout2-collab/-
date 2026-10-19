@@ -26,9 +26,10 @@ agrees.
 ## New session setup (fresh container)
 
 - Python packages: `pip install requests pillow`; FFmpeg must be installed (`ffmpeg -version`).
-- Keys: `work/.env` is not in git. If it is missing, ask the user for the VoiceGen and
-  RoyalTechno keys and write them there as `VOICEGEN_API_KEY=...` and
-  `ROYALTECHNO_API_KEY=...`; never repeat them in chat.
+- Keys are never stored in git. They come from the cloud environment's variables
+  `VOICEGEN_API_KEY` and `ROYALTECHNO_API_KEY` (set once by the user in the environment
+  settings, every new session gets them) or from the git-ignored `work/.env`. If neither is
+  there, ask the user to add them in the environment settings; never repeat a key in chat.
 - Sound files are not in git either: download what each video needs (see Sound design).
 
 ## Reference material
@@ -40,6 +41,7 @@ agrees.
 - `style/style.json` — the channel's fixed picture style: `style_block`, `shot_types`,
   `location_prompt`. Do not rewrite it; change it only when the user asks.
 - `refs/hero.png` — the hero (M1), reused in every video.
+- `refs/thumbnail_style.jpg` — labelled collage of 6 competitor thumbnails (step 8).
 - `refs/style_competitor.jpg` — style reference labelled "STYLE REFERENCE": a 3×2 collage of
   competitor frames from `style/reference.mp4` and our own approved frames (sources in
   `style/ref_sources/`). The STYLE rule says: drawing style only — no brightness, colour
@@ -195,6 +197,19 @@ Files above ~100 MB do not download on the user's phone. Send:
   `-c copy -f segment -segment_time 205` (each 55–70 MB);
 - for a sound or picture fix, also a short fragment (20–90 s) of the changed place.
 
+## 8. Thumbnails (after the finished video is sent)
+
+Offer the user 10 thumbnail options in the competitor's thumbnail style:
+1. Look at `refs/thumbnail_style.jpg` (6 competitor thumbnails, sources and the channel page
+   in `style/thumbnails/`). Their pattern: the hero big and close, one story element behind
+   him, a simple background, 1–2 huge bold words in a free corner ("1 YEAR", "PART 2",
+   "HOUR 1"), sometimes two coloured words for a contrast ("BAD" / "GOOD").
+2. Write `work/<slug>/thumbnails.json`: 10 different ideas `{"text": "...", "idea": "..."}`
+   built from the strongest moments and the title of this video.
+3. `python3 scripts/thumbnails.py work/<slug>/thumbnails.json` → `thumbnails/thumb_01..10.png`
+   (hero + thumbnail reference attached to every one), send all 10, the user picks or asks
+   for changes (`--only 3,7 --force` after editing those ideas).
+
 ## Effects (fixed — approved on the 40 s test, identical in every video)
 
 All values live in `EFFECTS` at the top of `scripts/assemble.py`; never change them
@@ -257,8 +272,9 @@ by up to 10 dB, so equal dB settings do not sound equal):
 
 ## Keys and costs
 
-- Keys are read from `work/.env` (`VOICEGEN_API_KEY`, `ROYALTECHNO_API_KEY`); `work/` is
-  git-ignored. Never put keys in other files, commits or chat.
+- Keys are read from the environment variables `VOICEGEN_API_KEY`, `ROYALTECHNO_API_KEY`
+  (cloud environment settings) or from the git-ignored `work/.env`. Never put keys in other
+  files, commits or chat.
 - RoyalTechno rules: poll images every 5 s with `If-None-Match`, ≤ 20 jobs in flight,
   one `Idempotency-Key` per job, stop on 400/401/402/403, retry only 429/503.
 - VoiceGen results expire after 3 days: download immediately.
