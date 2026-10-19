@@ -115,8 +115,6 @@ User preferences that always apply:
 - `refs`: `hero` whenever the hero is visible; a location ref whenever the scene is in a
   recurring place; none for isolated objects/diagrams. Decide per scene.
 - `text_in_image`: only where the reference uses on-screen text.
-- `hero_outfit` (optional, only when the user asks, e.g. scenes before the time jump): other
-  clothes for the hero in that scene; his head stays an exact copy of `hero.png`.
 - `type`: one of the fixed shot types in `style/style.json` (`hero_location`, `object`,
   `big_text`, `closeup`).
 - The `style` ref is attached to every scene automatically by `images.py`, together with

@@ -55,14 +55,7 @@ def build_prompt(project, scene):
         parts.append(f"SHOT TYPE: {STYLE['shot_types'].get(scene['type'], scene['type'])}")
     parts.append(f"SCENE: {scene['prompt']}")
     roles = {project.get("ref_roles", {}).get(r, r) for r in scene.get("refs", [])}
-    rules = dict(REF_RULES)
-    if scene.get("hero_outfit"):
-        # Only on the user's request (e.g. scenes before the time jump): same head, other clothes.
-        rules["hero"] = ("The hero's head is an exact copy of the HERO reference image: the same face, dot eyes, hair "
-                         "and everything on his head, unchanged. In this scene ONLY his clothing is different: "
-                         f"{scene['hero_outfit']}. Do not draw the clothing from the HERO reference in this scene. "
-                         "Draw the hero only ONCE in the frame.")
-    parts += [rules[r] for r in ("hero", "location", "style") if r in roles]
+    parts += [REF_RULES[r] for r in ("hero", "location", "style") if r in roles]
     if scene.get("text_in_image"):
         parts.append(f'The only text in the image is exactly: "{scene["text_in_image"]}" '
                      "in bold black capital sans-serif letters, spelled exactly as written.")
