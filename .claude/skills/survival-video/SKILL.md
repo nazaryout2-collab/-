@@ -135,7 +135,8 @@ SCENE: <scene prompt>
 ```
 
 The reference rules are in `REF_RULES` in `scripts/images.py`: the hero must match the
-HERO image exactly (dot eyes, plain white head, drawn only once), a location must keep the
+HERO image exactly, with a strict ban on changing any part of his appearance (his
+features are not described in words, the reference image is the only source), drawn only once, a location must keep the
 layout of its LOCATION image, the STYLE image is used only for line weight and colouring.
 
 ### Known failure modes
@@ -143,7 +144,8 @@ layout of its LOCATION image, the STYLE image is used only for line weight and c
 Check for these on contact sheets only when the user asks for a check, and fix by
 regenerating the scene with `--only <ids> --force` after tightening its prompt or refs:
 - hero drawn twice in one frame;
-- eyes with whites, pupils or eyelids instead of the reference dots;
+- the hero's appearance differs from `hero.png` (missing mouth, eyes with whites or pupils,
+  other hair or clothes);
 - coloured or orange face from "firelight" or "glow" in the prompt;
 - modern tools or objects in a prehistoric setting;
 - objects copied from a reference image (style or location) into an unrelated scene;
