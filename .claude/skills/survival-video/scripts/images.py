@@ -33,12 +33,12 @@ REF_RULES = {
              "proportions or line style, in every pose, angle and emotion. Every feature visible on the reference stays "
              "visible. Draw the hero only ONCE in the frame."),
     "location": "The setting must match the LOCATION reference image: same layout, rock shapes, walls and objects.",
+    "character": ("Every CHARACTER reference shows a recurring character or animal of this video: draw it exactly like its "
+                  "reference (same shape, colours, markings and proportions)."),
     "style": ("The image labelled STYLE REFERENCE is a sample of the drawing style only: line weight, flat colouring "
-              "and shading. Do NOT copy from it the brightness, colour intensity, lighting, time of day or weather: take "
-              "those only from the SCENE description. Do NOT transfer anything from it into this picture: no objects, "
-              "machines, tanks, pipes, shelves, buildings, labels, text or layout. Ignore every person in it completely: "
-              "never take a cap, hair, face, clothes or any other part of a look from it; the only hero is the one in the "
-              "HERO reference. Draw only what the SCENE describes."),
+              "and shading. Do NOT copy from it the brightness, lighting, time of day or weather: take those only from "
+              "the SCENE description. Do NOT transfer anything from it into this picture: no objects, machines, tanks, "
+              "pipes, shelves, buildings, labels, text or layout. Draw only what the SCENE describes."),
 }
 
 
@@ -54,8 +54,11 @@ def build_prompt(project, scene):
     if scene.get("type"):
         parts.append(f"SHOT TYPE: {STYLE['shot_types'].get(scene['type'], scene['type'])}")
     parts.append(f"SCENE: {scene['prompt']}")
+    if scene.get("in_frame"):
+        parts.append("IN THE FRAME (every one of them must be clearly visible): " + "; ".join(scene["in_frame"]))
     roles = {project.get("ref_roles", {}).get(r, r) for r in scene.get("refs", [])}
-    parts += [REF_RULES[r] for r in ("hero", "location", "style") if r in roles]
+    parts += [REF_RULES[r] for r in ("hero", "character", "location", "style") if r in roles]
+    parts.append(STYLE["quality_rule"])
     if scene.get("text_in_image"):
         parts.append(f'The only text in the image is exactly: "{scene["text_in_image"]}" '
                      "in bold black capital sans-serif letters, spelled exactly as written.")
@@ -177,18 +180,21 @@ def main():
     ap.add_argument("--ref", action="append", default=[])
     ap.add_argument("--location", nargs=2, metavar=("NAME", "DESCRIPTION"),
                     help="location reference candidates -> refs/candidates/loc_<NAME>_N.png")
+    ap.add_argument("--character", nargs=2, metavar=("NAME", "DESCRIPTION"),
+                    help="recurring character / animal candidates -> refs/candidates/char_<NAME>_N.png")
     args = ap.parse_args()
 
     base_inp = {"aspect_ratio": "landscape"}
     if args.resolution:
         base_inp["resolution"] = args.resolution
 
-    if args.location:
-        name, desc = args.location
-        args.refs_only = (STYLE["style_block"] + "\n" + STYLE["location_prompt"].format(description=desc)
-                          + "\n" + REF_RULES["style"])
-        args.out = f"refs/candidates/loc_{name}"
-        args.ref = args.ref or [STYLE_REF]
+    for kind, prefix, template in (("location", "loc", "location_prompt"), ("character", "char", "character_prompt")):
+        if getattr(args, kind):
+            name, desc = getattr(args, kind)
+            args.refs_only = "\n".join([STYLE["style_block"], STYLE[template].format(description=desc),
+                                        REF_RULES["style"], STYLE["quality_rule"]])
+            args.out = f"refs/candidates/{prefix}_{name}"
+            args.ref = args.ref or [STYLE_REF]
 
     if args.refs_only:
         inp = {"prompt": args.refs_only, **base_inp}

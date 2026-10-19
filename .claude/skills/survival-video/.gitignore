@@ -7,3 +7,4 @@ sfx/**/*.ogg
 refs/loc_*
 refs/style_objects.jpg
 refs/style_neutral.png
+refs/char_*

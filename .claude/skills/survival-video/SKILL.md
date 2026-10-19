@@ -43,10 +43,9 @@ agrees.
 - `refs/hero.png` — the hero (M1), reused in every video.
 - `refs/thumbnail_style.jpg` — labelled collage of 6 competitor thumbnails (step 8).
 - `refs/style_competitor.jpg` — style reference labelled "STYLE REFERENCE": a 3×2 collage of
-  competitor frames from `style/reference.mp4` and our own approved frames (sources in
-  `style/ref_sources/`). The STYLE rule says: drawing style only — no brightness, colour
-  intensity, lighting or time of day from it, no objects, and ignore every person in it;
-  the only hero is `refs/hero.png`.
+  competitor frames from `style/reference.mp4` (their character graphically replaced by our
+  hero) and our own approved frames; sources in `style/ref_sources/`. The STYLE rule says:
+  drawing style only — no brightness, lighting or time of day from it, no objects.
 
 ## 0. Session start: analyse the script (always, before writing anything)
 
@@ -80,17 +79,27 @@ User preferences that always apply:
 - Images change slightly faster than the reference: ≈ 85% of its measured average
   seconds per image.
 
-## 2. Locations (every new video, right after the script is approved)
+## 2. Locations and recurring characters (every new video, right after the script is approved)
 
-1. List the places that recur in the script (shelter, cave, camp, river crossing…). A place
-   that appears in 3+ scenes gets its own location reference; one-off places do not.
-2. For each one: `python3 scripts/images.py --location <name> "<what the place looks like:
-   layout, rocks, walls, key objects that must stay the same>"` → 4 candidates in
-   `refs/candidates/loc_<name>_N.png` (fixed style + `refs/style_competitor.jpg`).
-3. Show the candidates to the user; the chosen one becomes `refs/loc_<name>.png`.
-   Locations belong to one video (`refs/loc_*` is git-ignored).
-4. If the story changes a place later (a wall gets built, a fire goes out), describe the
-   change in the scene prompt; do not make a new location ref for it.
+1. Go through the approved script and list:
+   - places that recur (shelter, cave, camp, river crossing…);
+   - characters and animals that recur (a T-rex, a wolf pack leader, a Neanderthal, a
+     mammoth…), the hero excluded — he already has `refs/hero.png`.
+   Anything that appears in **more than 2 scenes (3 or more)** gets its own reference;
+   things in 1–2 scenes do not.
+2. Show the user this list (name, what it looks like, which scenes) and wait for approval.
+3. Generate candidates:
+   - place: `python3 scripts/images.py --location <name> "<layout, rocks, walls, key objects
+     that must stay the same>"` → `refs/candidates/loc_<name>_N.png`;
+   - character / animal: `python3 scripts/images.py --character <name> "<species, body,
+     colours, markings, distinctive details>"` → `refs/candidates/char_<name>_N.png`.
+   Both use the fixed style and `refs/style_competitor.jpg`.
+4. Show the candidates; the user picks; save as `refs/loc_<name>.png` / `refs/char_<name>.png`
+   (they belong to one video and are git-ignored).
+5. In `scenes.json` add them to `refs` with the role `location` or `character`, and attach
+   them to every scene where that place or that creature is in the frame.
+6. If the story changes a place later (a wall gets built, a fire goes out), describe the
+   change in the scene prompt; do not make a new reference for it.
 
 ## 3. Scene table → `work/<slug>/scenes.json`
 
@@ -100,18 +109,38 @@ User preferences that always apply:
   "voice": {"template_id": "chosen by the user"},
   "resolution": null,
   "setting": "one line: era, landscape and its colours for this video (the style itself is fixed)",
-  "refs": {"hero": "refs/hero.png", "style": "refs/style_competitor.jpg", "<place>": "refs/loc_<place>.png"},
-  "ref_roles": {"hero": "hero", "style": "style", "<place>": "location"},
+  "refs": {"hero": "refs/hero.png", "style": "refs/style_competitor.jpg",
+           "<place>": "refs/loc_<place>.png", "<creature>": "refs/char_<creature>.png"},
+  "ref_roles": {"hero": "hero", "style": "style", "<place>": "location", "<creature>": "character"},
   "scenes": [
     {"id": 1, "text": "narration", "type": "<shot type>",
      "prompt": "what is in the frame: action, emotion, framing, props",
-     "refs": ["hero", "<place>"], "text_in_image": "",
+     "in_frame": ["the hero, standing small at the left, frozen", "the T-rex on the hill, roaring"],
+     "refs": ["hero", "<place>", "<creature>"], "text_in_image": "",
      "sfx": [{"file": "sfx/<pack>/<file>.mp3", "at": 0.0, "db": -8, "len": 4}]}
   ]
 }
 ```
 
 - One image per scene; words per scene = target seconds × narration words per second.
+
+### Who is in the frame: continuity between scenes (most important rule for pictures)
+
+The narration says what the scene is ABOUT; it does not say who is in the frame. Before
+writing the prompts, go through the scenes in order and keep track of the moment: where
+the hero is, what is around him, which creatures are present.
+- While the moment continues in the same place, everyone who is there stays in the frame,
+  even if the sentence talks only about one of them. Example: scene 10 — the hero walks up
+  to a hill; scene 11 — a T-rex appears; scene 12 — the narration describes how terrifying
+  the T-rex is. Scene 12 still shows the hero in that place (small in the foreground,
+  frozen, looking at the T-rex) and the T-rex; the hero does not vanish just because the
+  sentence is about the T-rex.
+- Somebody leaves the frame only when the story moves them (he runs away, the time skips,
+  the place changes) or when the scene is deliberately a close-up, an object or a diagram.
+- Write every visible character into `in_frame` with where he is and what he does, and
+  attach the matching refs (`hero`, `char_*`, `loc_*`). `images.py` adds the line "IN THE
+  FRAME (every one of them must be clearly visible): …" to the prompt.
+
 - `refs`: `hero` whenever the hero is visible; a location ref whenever the scene is in a
   recurring place; none for isolated objects/diagrams. Decide per scene.
 - `text_in_image`: only where the reference uses on-screen text.
@@ -149,7 +178,9 @@ Master prompt (`build_prompt`):
 SETTING: <setting of this video>
 SHOT TYPE: <shot_types[type] from style/style.json>
 SCENE: <scene prompt>
-<one rule per reference role used in the scene: hero / location / style>
+IN THE FRAME (every one of them must be clearly visible): <in_frame>
+<one rule per reference role used in the scene: hero / character / location / style>
+<quality rule: clear full colours, never faded, washed-out or low-contrast>
 <exact text rule | "No text, letters or numbers anywhere in the image.">
 16:9 frame, no watermark, no borders.
 ```
@@ -170,6 +201,9 @@ regenerating the scene with `--only <ids> --force` after tightening its prompt o
 - modern tools or objects in a prehistoric setting;
 - objects copied from a reference image (style or location) into an unrelated scene;
 - unrequested, extra or misspelt text;
+- a character who is still in the scene has vanished (see "Who is in the frame");
+- a recurring creature looks different from its `char_*` reference;
+- faded, washed-out, greyish or low-contrast picture;
 - for diagram / icon scenes: an anchor object from the style ref appears — leave `refs` empty.
 
 ## 7. Test, then hand over

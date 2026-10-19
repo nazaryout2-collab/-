@@ -27,7 +27,7 @@ THUMB_RULES = (
 
 
 def build(item):
-    parts = [STYLE["style_block"], THUMB_RULES, f"THUMBNAIL: {item['idea']}", REF_RULES["hero"]]
+    parts = [STYLE["style_block"], THUMB_RULES, f"THUMBNAIL: {item['idea']}", REF_RULES["hero"], STYLE["quality_rule"]]
     if item.get("text"):
         parts.append(f'The only text in the image is exactly: "{item["text"]}", spelled exactly as written.')
     else:
