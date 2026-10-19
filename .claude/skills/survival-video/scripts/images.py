@@ -35,7 +35,9 @@ REF_RULES = {
     "location": "The setting must match the LOCATION reference image: same layout, rock shapes, walls and objects.",
     "style": ("The STYLE reference image is given ONLY to understand the drawing style: line weight, colouring and "
               "shading. Do NOT transfer anything from it into this picture: no objects, machines, tanks, pipes, shelves, "
-              "buildings, labels, text or layout. Draw only what the SCENE describes."),
+              "buildings, labels, text or layout. Ignore the person in the STYLE reference completely: never take his "
+              "cap, hair, face, clothes or any other part of his look; the only hero is the one in the HERO reference. "
+              "Draw only what the SCENE describes."),
 }
 
 
