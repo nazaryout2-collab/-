@@ -16,6 +16,14 @@ everything, run only the small test the user approves, and hand over the exact c
 
 Talk to the user in Russian; the narration itself is in English.
 
+## New session setup (fresh container)
+
+- Python packages: `pip install requests pillow`; FFmpeg must be installed (`ffmpeg -version`).
+- Keys: `work/.env` is not in git. If it is missing, ask the user for the VoiceGen and
+  RoyalTechno keys and write them there as `VOICEGEN_API_KEY=...` and
+  `ROYALTECHNO_API_KEY=...`; never repeat them in chat.
+- Sound files are not in git either: download what each video needs (see Sound design).
+
 ## Reference material
 
 - `style/reference.mp4` — the competitor fragment the user supplied (picture, pacing, sound);
