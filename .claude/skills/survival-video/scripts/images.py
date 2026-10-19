@@ -33,8 +33,9 @@ REF_RULES = {
              "proportions or line style, in every pose, angle and emotion. Every feature visible on the reference stays "
              "visible. Draw the hero only ONCE in the frame."),
     "location": "The setting must match the LOCATION reference image: same layout, rock shapes, walls and objects.",
-    "style": ("Use the STYLE reference ONLY for line weight, colouring and shading. Do NOT copy any objects, shelves, "
-              "labels or layout from it."),
+    "style": ("The STYLE reference image is given ONLY to understand the drawing style: line weight, colouring and "
+              "shading. Do NOT transfer anything from it into this picture: no objects, machines, tanks, pipes, shelves, "
+              "buildings, labels, text or layout. Draw only what the SCENE describes."),
 }
 
 
@@ -181,7 +182,8 @@ def main():
 
     if args.location:
         name, desc = args.location
-        args.refs_only = STYLE["style_block"] + "\n" + STYLE["location_prompt"].format(description=desc)
+        args.refs_only = (STYLE["style_block"] + "\n" + STYLE["location_prompt"].format(description=desc)
+                          + "\n" + REF_RULES["style"])
         args.out = f"refs/candidates/loc_{name}"
         args.ref = args.ref or [STYLE_REF]
 
@@ -208,6 +210,9 @@ def main():
         dest = img_dir / f"{name}.png"
         if (only and str(s["id"]) not in only) or (dest.exists() and not args.force):
             continue
+        # The style reference (and its "style only, copy nothing" rule) goes with every scene.
+        if "style" in project.get("refs", {}) and "style" not in s.get("refs", []):
+            s = {**s, "refs": s.get("refs", []) + ["style"]}
         prompt = build_prompt(project, s)
         inp = {"prompt": prompt, **base_inp}
         refs = [project["refs"][k] for k in s.get("refs", [])]

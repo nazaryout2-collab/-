@@ -98,8 +98,9 @@ User preferences that always apply:
 - `text_in_image`: only where the reference uses on-screen text.
 - `type`: one of the fixed shot types in `style/style.json` (`hero_location`, `object`,
   `big_text`, `closeup`).
-- `style` ref in every scene (with the hero and location refs where they apply). If an
-  object from the style collage shows up in a frame, regenerate that scene without it.
+- The `style` ref is attached to every scene automatically by `images.py`, together with
+  the rule "use it only to understand the drawing style, transfer no objects from it".
+  If an object from the style collage still shows up, regenerate that scene.
 - Never use a competitor frame as a reference image: its objects leak into the frames.
 
 ## 4. Choices to ask the user (every new video)
