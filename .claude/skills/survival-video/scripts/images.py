@@ -28,10 +28,12 @@ MAX_IN_FLIGHT = 20
 FATAL = {400, 401, 402, 403}
 
 REF_RULES = {
-    "hero": ("The hero is an exact copy of the HERO reference image. It is forbidden to change his appearance in any "
-             "way: do not add, remove, simplify or redraw any part of his face, head, hair, headwear, clothing, colours, "
-             "proportions or line style, in every pose, angle and emotion. Every feature visible on the reference stays "
-             "visible. Draw the hero only ONCE in the frame."),
+    "hero": ("STRICT RULE: the hero is an exact copy of the HERO reference image, and his appearance must never change. "
+             "HAIR: exactly as on the reference (shape, length, colour, everything on the head), never changed. "
+             "CLOTHES: exactly as on the reference (cut, pattern, colour), never changed; never add, remove or swap any "
+             "piece of clothing, gear or accessory. EYES: exactly as on the reference, never changed, never redrawn in "
+             "another way. FACE, MOUTH, HEAD, SKIN COLOUR, BODY PROPORTIONS, LINE STYLE: exactly as on the reference. "
+             "Nothing is added, removed, simplified, recoloured or redrawn. Draw the hero only ONCE in the frame."),
     "location": "The setting must match the LOCATION reference image: same layout, rock shapes, walls and objects.",
     "character": ("Every CHARACTER reference shows a recurring character or animal of this video: draw it exactly like its "
                   "reference (same shape, colours, markings and proportions)."),
