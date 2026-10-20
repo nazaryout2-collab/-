@@ -144,6 +144,10 @@ the hero is, what is around him, which creatures are present.
 - `refs`: `hero` whenever the hero is visible; a location ref whenever the scene is in a
   recurring place; none for isolated objects/diagrams. Decide per scene.
 - `text_in_image`: only where the reference uses on-screen text.
+- Never write words that make a picture pale into a scene prompt: "pale", "muted", "misty",
+  "hazy", "foggy", "dusty", "faded", "washed", "grey sky", "soft light". For night, dusk, rain
+  or snow describe the scene itself (dark blue night sky, orange fire light, falling snow);
+  the colours stay clear.
 - `type`: one of the fixed shot types in `style/style.json` (`hero_location`, `object`,
   `big_text`, `closeup`).
 - The `style` ref is attached to every scene automatically by `images.py`, together with
