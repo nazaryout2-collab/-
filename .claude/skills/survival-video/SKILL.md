@@ -153,8 +153,12 @@ the hero is, what is around him, which creatures are present.
 
 ## 4. Choices to ask the user (every new video)
 
-- Voice: run `python3 scripts/voicegen.py --list`, show the saved templates, the user picks
-  (last time: "Ниша финансы 1.2", template `2d0c42ad-885b-4833-91cf-e8f697c2b4d7`).
+- Voice: the channel's voice is **"James – Calm, Clear and Informative"** (ElevenLabs library
+  voice, read by the Cartesia engine), used for Jurassic Survival Part 1 and Part 2. Put it in
+  `scenes.json` as
+  `"voice": {"voice_id": "uh5qBlKfjqFl7XXhFnJi", "voice_source": "elevenlabs", "model_id": "sonic-3.6", "speed": 100}`
+  (volume 100, the script default). Use it unless the user asks for another voice; then run
+  `python3 scripts/voicegen.py --list` and let the user pick.
 - Image resolution: offer the model default (cheapest, $0.02) or `2k`/`4k` (2x/4x).
   Default to the cheapest unless the user chooses otherwise.
 
