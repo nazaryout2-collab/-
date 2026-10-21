@@ -40,7 +40,9 @@ agrees.
   Part 1 and Part 2), with timestamps.
 - `style/style.json` — the channel's fixed picture style: `style_block`, `shot_types`,
   `location_prompt`. Do not rewrite it; change it only when the user asks.
-- `refs/hero.png` — the hero (M1), reused in every video.
+- `refs/hero.png` — the hero (M1), reused in every video. Scenes use `refs/hero_crop.png`, the
+  same picture cropped tight so the figure fills it: with the small figure on a wide white canvas
+  the model often redrew him as a bearded caveman or put a helmet on him (tested).
 - `refs/thumbnail_style.jpg` — labelled collage of 6 competitor thumbnails (step 8).
 - `refs/style_competitor.jpg` — style reference labelled "STYLE REFERENCE": a 3×2 collage of
   competitor frames from `style/reference.mp4` (their character graphically replaced by our
@@ -108,10 +110,12 @@ User preferences that always apply:
   "title": "Topic Survival 1 Year",
   "voice": {"template_id": "chosen by the user"},
   "resolution": null,
-  "setting": "one line: era, landscape and its colours for this video (the style itself is fixed)",
-  "refs": {"hero": "refs/hero.png", "style": "refs/style_competitor.jpg",
+  "setting": "rules for every frame only (no panels...); never a list of all places and seasons of the video",
+  "refs": {"hero": "refs/hero_crop.png", "style": "refs/style_competitor.jpg",
            "<place>": "refs/loc_<place>.png", "<creature>": "refs/char_<creature>.png"},
   "ref_roles": {"hero": "hero", "style": "style", "<place>": "location", "<creature>": "character"},
+  "ref_labels": {"hero": "CHARACTER 1", "<creature>": "T-REX", "<place>": "HILL"},
+  "ref_notes": {"<creature>": "size only, e.g. Reference {<creature>} shows it next to CHARACTER 1: keep that size"},
   "scenes": [
     {"id": 1, "text": "narration", "type": "<shot type>",
      "prompt": "what is in the frame: action, emotion, framing, props",
@@ -178,21 +182,36 @@ the hero is, what is around him, which creatures are present.
 Master prompt (`build_prompt`):
 
 ```
+REFERENCE IMAGES: N reference images are attached, in this order:
+Reference 1 shows our character CHARACTER 1 and has absolute priority for his identity and appearance. ...
+Reference 2 shows our T-REX. Draw T-REX exactly as in Reference 2. <ref_note, if any>
+Reference 3 shows the place HILL. Take the layout, rocks, trees and objects of this place from Reference 3.
+Reference 4 is the STYLE reference. It controls only the rendering technique ...
 <style_block from style/style.json>
 SETTING: <setting of this video>
 SHOT TYPE: <shot_types[type] from style/style.json>
 SCENE: <scene prompt>
 IN THE FRAME (every one of them must be clearly visible): <in_frame>
-<one rule per reference role used in the scene: hero / character / location / style>
-<quality rule: clear full colours, never faded, washed-out or low-contrast>
+<quality rule>
 <exact text rule | "No text, letters or numbers anywhere in the image.">
 16:9 frame, no watermark, no borders.
 ```
 
-The reference rules are in `REF_RULES` in `scripts/images.py`: the hero must match the
-HERO image exactly, with a strict ban on changing any part of his appearance (his
-features are not described in words, the reference image is the only source), drawn only once, a location must keep the
-layout of its LOCATION image, the STYLE image is used only for line weight and colouring.
+Rules (tested on Jurassic Part 2; each one fixed a real failure):
+- References go hero, characters, places, style; the prompt introduces each by its number and
+  `ref_labels` name. Scene text then uses only that name (CHARACTER 1, T-REX, NOTEBOOK...).
+- Never describe how the hero, an animal or a recurring object looks, in the scene text, the
+  setting or the style block: the look comes only from its reference. Size relations go in
+  `ref_notes` (best shown in the reference picture itself, e.g. the T-rex drawn next to the hero).
+- Do not call the hero "HERO" (the model draws a heroic realistic man) and do not set him against
+  the other people ("all other people are stick figures", "he must not match the stick-figure
+  style"): both made him a realistic man.
+- One source of style: the STYLE reference controls only the rendering technique and never
+  changes the characters, animals, objects or places of the other references.
+- No name banners drawn on the reference images: the model then ignored the references.
+- No contradictions between parts: no white background in the style block for full scenes,
+  no fixed camera angle in a shot type, no list of all places and seasons in the setting
+  (it leaks into every scene), no "hazy" in a scene when the quality rule says never hazy.
 
 ### Known failure modes
 

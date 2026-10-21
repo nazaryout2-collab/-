@@ -1,13 +1,13 @@
 {
  "_note": "Fixed picture style of the channel. Identical in every video; change only when the user asks.",
- "style_block": "STYLE: clean 2D vector explainer illustration exactly like the STYLE reference: thin clean uniform black outlines, flat solid colors with subtle light-grey shading, plain white or very light grey background, lots of empty space, simple readable educational composition; diagrams and cross-sections use plain straight arrows. All people are stick figures: thin single-line body, arms and legs, round plain white head, small solid black dot eyes (no eye whites, no pupils, no eyelids); emotion is shown only with eyebrow lines, the mouth and body pose. Other people (tribes, Neanderthals, strangers) are drawn in the same stick-figure style; only the hero has his unique look from the HERO reference. Animals and dinosaurs are drawn simply in the same clean line style. Muted natural colors; orange and red only as accents for fire and danger.",
+ "style_block": "RENDERING: clean 2D vector explainer illustration rendered like the STYLE reference: thin clean uniform black outlines, flat solid colors with subtle light-grey shading, simple readable educational composition; diagrams and cross-sections use plain straight arrows. Orange and red only as accents for fire and danger.",
  "shot_types": {
-  "hero_location": "the hero inside the environment, wide or medium shot, eye level, environment drawn simply",
+  "hero_location": "{hero} inside the environment, wide or medium shot",
   "object": "a single object, small group of objects or simple diagram isolated on a plain white background, no character",
   "big_text": "large bold text as the main element on a plain white background with one small supporting illustration",
-  "closeup": "close-up of the hero's face, upper body or hands, plain light background"
+  "closeup": "close-up of {hero}'s face, upper body or hands, plain light background"
  },
  "location_prompt": "Location design in exactly the same drawing style as the STYLE reference image, no characters: {description}. Wide shot, everything drawn simply, lots of empty space. 16:9 frame, no text, no watermark.",
- "quality_rule": "Colours are clear, clean and full, like in the STYLE reference. The picture is never faded, washed-out, greyish, hazy, dusty, low-contrast or desaturated, whatever the time of day. But it is not too bright either: no neon, oversaturated or glowing colours, no overexposed light.",
+ "quality_rule": "Colours are clear and clean, like in the STYLE reference: never faded, washed-out or greyish, never neon or overexposed.",
  "character_prompt": "Character design sheet in exactly the same drawing style as the STYLE reference: {description}. One single full-body view, side-on or three-quarter, neutral pose, plain white background, nothing else in the frame. 16:9 frame, no text, no watermark."
 }

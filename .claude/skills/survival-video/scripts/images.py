@@ -27,39 +27,64 @@ BASE = "https://api.royaltechno.cc"
 MAX_IN_FLIGHT = 20
 FATAL = {400, 401, 402, 403}
 
+# The prompt opens by introducing each attached reference image by its number (attachment order) and name.
+# Scene text then calls them only by that name (CHARACTER 1, T-REX, ...) and never describes how they look:
+# the look comes from the reference alone. No name banners on the images themselves: tested, the model then
+# follows the references much worse (ignores the location, redraws the hero as a realistic man).
 REF_RULES = {
-    "hero": ("STRICT RULE: the hero is an exact copy of the HERO reference image, and his appearance must never change. "
-             "HAIR: exactly as on the reference (shape, length, colour, everything on the head), never changed. "
-             "CLOTHES: exactly as on the reference (cut, pattern, colour), never changed; never add, remove or swap any "
-             "piece of clothing, gear or accessory. EYES: exactly as on the reference, never changed, never redrawn in "
-             "another way. FACE, MOUTH, HEAD, SKIN COLOUR, BODY PROPORTIONS, LINE STYLE: exactly as on the reference. "
-             "Nothing is added, removed, simplified, recoloured or redrawn. Draw the hero only ONCE in the frame."),
-    "location": "The setting must match the LOCATION reference image: same layout, rock shapes, walls and objects.",
-    "character": ("Every CHARACTER reference shows a recurring character or animal of this video: draw it exactly like its "
-                  "reference (same shape, colours, markings and proportions)."),
-    "style": ("The image labelled STYLE REFERENCE is a sample of the drawing style only: line weight, flat colouring "
-              "and shading. Do NOT copy from it the brightness, lighting, time of day or weather: take those only from "
-              "the SCENE description. Do NOT transfer anything from it into this picture: no objects, machines, tanks, "
-              "pipes, shelves, buildings, labels, text or layout. Draw only what the SCENE describes."),
+    "hero": ("Reference {n} shows our character {name} and has absolute priority for his identity and appearance. "
+             "Take {name} from Reference {n} as he is, changing only his pose and viewing angle for the scene; objects "
+             "the SCENE gives him (a watch, a bag, a tool) are added. Draw {name} only once in the picture."),
+    "character": "Reference {n} shows our {name}. Draw {name} exactly as in Reference {n}.",
+    "location": ("Reference {n} shows the place {name}. Take the layout, rocks, trees and objects of this place from "
+                 "Reference {n}."),
+    "style": ("Reference {n} is the STYLE reference. It controls only the rendering technique of the picture: outline "
+              "thickness, flat colouring, shading and background simplification. It never changes the characters, "
+              "animals, objects or places of the other references: each keeps the look of its own reference."),
 }
+ROLE_ORDER = ("hero", "character", "location", "style")
 
 
 STYLE = json.loads((SKILL_DIR / "style" / "style.json").read_text())
 STYLE_REF = "refs/style_competitor.jpg"
 
 
+def ref_label(project, key):
+    return project.get("ref_labels", {}).get(key, key.upper())
+
+
+def ordered_refs(project, scene):
+    """Scene refs: the hero first, then characters, places, and the style sample last in every scene."""
+    roles = project.get("ref_roles", {})
+    keys = list(scene.get("refs", []))
+    if "style" in project.get("refs", {}) and "style" not in keys:
+        keys.append("style")
+    return sorted(keys, key=lambda k: ROLE_ORDER.index(roles.get(k, k)))
+
+
+def ref_header(project, keys):
+    roles = project.get("ref_roles", {})
+    lines = [f"REFERENCE IMAGES: {len(keys)} reference images are attached, in this order:"]
+    for n, k in enumerate(keys, 1):
+        # A note may name another reference by its key, e.g. "Reference {rex}" -> its number in this scene.
+        note = project.get("ref_notes", {}).get(k, "").format_map({key: i for i, key in enumerate(keys, 1)})
+        lines.append(REF_RULES[roles.get(k, k)].format(n=n, name=ref_label(project, k)) + (f" {note}" if note else ""))
+    return "\n".join(lines)
+
+
 def build_prompt(project, scene):
-    """Master prompt: fixed style + setting + shot type + scene + reference rules + text rule."""
-    parts = [STYLE["style_block"]]
+    """Master prompt: reference introductions + fixed style + setting + shot type + scene + text rule."""
+    keys = ordered_refs(project, scene)
+    hero = ref_label(project, "hero")  # style.json writes {hero} for the hero's reference name
+    parts = [ref_header(project, keys)] if keys else []
+    parts.append(STYLE["style_block"].replace("{hero}", hero))
     if project.get("setting"):
         parts.append(f"SETTING: {project['setting']}")
     if scene.get("type"):
-        parts.append(f"SHOT TYPE: {STYLE['shot_types'].get(scene['type'], scene['type'])}")
+        parts.append(f"SHOT TYPE: {STYLE['shot_types'].get(scene['type'], scene['type']).replace('{hero}', hero)}")
     parts.append(f"SCENE: {scene['prompt']}")
     if scene.get("in_frame"):
         parts.append("IN THE FRAME (every one of them must be clearly visible): " + "; ".join(scene["in_frame"]))
-    roles = {project.get("ref_roles", {}).get(r, r) for r in scene.get("refs", [])}
-    parts += [REF_RULES[r] for r in ("hero", "character", "location", "style") if r in roles]
     parts.append(STYLE["quality_rule"])
     if scene.get("text_in_image"):
         parts.append(f'The only text in the image is exactly: "{scene["text_in_image"]}" '
@@ -194,7 +219,9 @@ def main():
         if getattr(args, kind):
             name, desc = getattr(args, kind)
             args.refs_only = "\n".join([STYLE["style_block"], STYLE[template].format(description=desc),
-                                        REF_RULES["style"], STYLE["quality_rule"]])
+                                        "The attached STYLE reference controls only the rendering technique: "
+                                        "outline thickness, flat colouring and shading.",
+                                        STYLE["quality_rule"]])
             args.out = f"refs/candidates/{prefix}_{name}"
             args.ref = args.ref or [STYLE_REF]
 
@@ -221,14 +248,11 @@ def main():
         dest = img_dir / f"{name}.png"
         if (only and str(s["id"]) not in only) or (dest.exists() and not args.force):
             continue
-        # The style reference (and its "style only, copy nothing" rule) goes with every scene.
-        if "style" in project.get("refs", {}) and "style" not in s.get("refs", []):
-            s = {**s, "refs": s.get("refs", []) + ["style"]}
         prompt = build_prompt(project, s)
         inp = {"prompt": prompt, **base_inp}
-        refs = [project["refs"][k] for k in s.get("refs", [])]
-        if refs:
-            inp["reference_image_urls"] = [as_image_input(r) for r in refs]
+        keys = ordered_refs(project, s)
+        if keys:
+            inp["reference_image_urls"] = [as_image_input(project["refs"][k]) for k in keys]
         items.append((name, inp, [dest]))
     print(f"{len(items)} images to generate with {args.model}")
     done = run_jobs(items, args.model)
