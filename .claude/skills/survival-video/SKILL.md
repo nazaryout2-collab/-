@@ -121,7 +121,9 @@ User preferences that always apply:
      "prompt": "what is in the frame: action, emotion, framing, props",
      "in_frame": ["the hero, standing small at the left, frozen", "the T-rex on the hill, roaring"],
      "refs": ["hero", "<place>", "<creature>"], "text_in_image": "",
-     "sfx": [{"file": "sfx/<pack>/<file>.mp3", "at": 0.0, "db": -8, "len": 4}]}
+     "sfx": [{"file": "sfx/<pack>/<file>.mp3", "at": 0.0, "db": -8, "len": 4}]},
+    {"id": 2, "text": "...", "type": "<shot type>", "prompt": "...", "in_frame": ["..."],
+     "after": 1, "new_refs": [], "refs": ["hero"], "text_in_image": ""}
   ]
 }
 ```
@@ -144,6 +146,33 @@ the hero is, what is around him, which creatures are present.
 - Write every visible character into `in_frame` with where he is and what he does, and
   attach the matching refs (`hero`, `char_*`, `loc_*`). `images.py` adds the line "IN THE
   FRAME (every one of them must be clearly visible): …" to the prompt.
+
+### Continuation frames (`after`): keeping one moment consistent
+
+Inside one continuous moment in one place (the T-rex at the hill, the fight on the cliff…)
+every next frame is drawn from the finished previous frame, not from the references again.
+Then creatures keep their exact look and size, and the place, light and weather carry on.
+- The first frame of a moment is a normal scene: its location and creature refs.
+- Each next frame of that moment gets `"after": <id of the frame it continues>` and no
+  location or creature refs: `scripts/chain.py` sends only the hero ref and that frame, with
+  the rule "keep everything from it, change only what the SCENE describes; a new shot, never a
+  copy". A character who first appears in the middle of the moment goes into
+  `"new_refs": ["<creature>"]` of that scene only (e.g. raptors arriving at the dead T-rex).
+- Start a new normal frame (no `after`) when the place changes, when the scene shows a new
+  place for the first time (the hero walks through a dark forest → in front of him a raging
+  river opens up: the river frame is a new normal frame), after a time skip, and for close-ups
+  of objects, notebook pages, diagrams and white flashes. Such an insert does not break the
+  moment: the frame after it continues from the last frame before it (`after` skips the insert).
+- The scene text must name everyone who is still there: what the text leaves out, the model
+  removes from the continued frame (the T-rex vanished from "he wakes up in the mud").
+- If the model copies the previous frame instead of a new shot, rewrite the framing in the
+  scene (wide shot from far away, over-the-shoulder close shot…) or continue from an earlier
+  frame of the moment that shows the needed view.
+- Check every continued frame before making the next one: an error is inherited by every
+  frame after it. Retry a bad frame with `--only <id> --force --tag t2`.
+
+Order: `images.py` (all normal frames), then `chain.py` (continued frames, one by one in id
+order).
 
 - `refs`: `hero` whenever the hero is visible; a location ref whenever the scene is in a
   recurring place; none for isolated objects/diagrams. Decide per scene.

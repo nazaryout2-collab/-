@@ -34,7 +34,9 @@ FATAL = {400, 401, 402, 403}
 REF_RULES = {
     "hero": ("Reference {n} shows our character {name} and has absolute priority for his identity and appearance. "
              "Take {name} from Reference {n} as he is, changing only his pose and viewing angle for the scene; objects "
-             "the SCENE gives him (a watch, a bag, a tool) are added. Draw {name} only once in the picture."),
+             "the SCENE gives him (a watch, a bag, a tool) are added. A common mistake with this reference is drawing a "
+             "helmet in place of his hair: what he has on his head in Reference {n} is his hair, drawn exactly as it is "
+             "there, never a helmet or a hat. Draw {name} only once in the picture."),
     "character": "Reference {n} shows our {name}. Draw {name} exactly as in Reference {n}.",
     "location": ("Reference {n} shows the place {name}. Take the layout, rocks, trees and objects of this place from "
                  "Reference {n}."),
@@ -247,6 +249,8 @@ def main():
         name = scene_name(s["id"])
         dest = img_dir / f"{name}.png"
         if (only and str(s["id"]) not in only) or (dest.exists() and not args.force):
+            continue
+        if "after" in s:  # drawn from the previous frame by chain.py
             continue
         prompt = build_prompt(project, s)
         inp = {"prompt": prompt, **base_inp}
