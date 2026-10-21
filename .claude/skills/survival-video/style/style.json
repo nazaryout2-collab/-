@@ -1,6 +1,6 @@
 {
  "_note": "Fixed picture style of the channel. Identical in every video; change only when the user asks.",
- "style_block": "RENDERING: clean 2D vector explainer illustration rendered like the STYLE reference: thin clean uniform black outlines, flat solid colors with subtle light-grey shading, simple readable educational composition; diagrams and cross-sections use plain straight arrows. Orange and red only as accents for fire and danger.",
+ "style_block": "RENDERING: clean 2D vector explainer illustration rendered like the STYLE reference: thin clean uniform black outlines, flat solid colors with soft simple shading, simple readable educational composition; diagrams and cross-sections use plain straight arrows. Rich, clear natural colours (green grass and leaves, brown fur, grey rock, blue sky and water); orange and red as accents for fire and danger.",
  "shot_types": {
   "hero_location": "{hero} inside the environment, wide or medium shot",
   "object": "a single object, small group of objects or simple diagram isolated on a plain white background, no character",
