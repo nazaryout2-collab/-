@@ -22,6 +22,7 @@ EFFECTS = {
     "fade": 0.4,          # crossfade between scenes, seconds
     "pad": 0.15,          # silence after each scene's narration, seconds
     "sfx_db": -8,         # default one-shot level in sound_design.py
+    "voice_lufs": -16,    # narration level of final.mp4 (VoiceGen files come out near -39 LUFS)
     "crf": 20,
     "preset": "medium",
     # Speed only (no visual effect): parallel scene renders, crossfade in blocks.
@@ -127,9 +128,18 @@ def main():
         else:
             xfade_chain(blocks, [media_duration(p) for p in blocks], body, fade)
 
+    # Static gain of the narration to voice_lufs plus a peak limiter; the picture is copied.
     final = root / "final.mp4"
-    body.replace(final)
-    print("final:", final, f"{media_duration(final):.1f}s")
+    err = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(body), "-map", "0:a", "-af", "ebur128",
+                          "-f", "null", "-"], capture_output=True, text=True).stderr
+    gain = EFFECTS["voice_lufs"] - float(err.rsplit("I:", 1)[1].split("LUFS")[0])
+    run(["ffmpeg", "-y", "-i", str(body), "-map", "0:v", "-map", "0:a", "-c:v", "copy",
+         "-af", f"volume={gain:.2f}dB,alimiter=limit=0.89:level=false",
+         "-c:a", "aac", "-b:a", "192k", "-ar", "48000", str(final)])
+    body.unlink()
+    for p in root.glob("block_*.mp4"):
+        p.unlink()
+    print("final:", final, f"{media_duration(final):.1f}s, voice gain {gain:+.1f} dB")
 
 
 if __name__ == "__main__":

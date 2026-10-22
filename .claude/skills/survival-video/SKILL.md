@@ -10,9 +10,11 @@ analyse the competitor's script yourself at the start of every session (step 0) 
 your findings down for that session only. The picture style is the opposite: it is fixed
 in `style/style.json` and never changes between videos.
 
-Limits matter (the user is on a $20 plan): never look at generated images unless the
-user asks, never run the full generation unless the user asks for it — prepare
-everything, run only the small test the user approves, and hand over the exact commands.
+Limits matter (the user is on a $20 plan): never run the full generation unless the user
+asks for it — prepare everything, run only the small test the user approves, and hand over
+the exact commands. Look at generated images only in one case without being asked: the
+first continued frame of each moment (see "Continuation frames"). A check of all frames and
+fixing them until they are right is done only on the user's command.
 
 Talk to the user in Russian; the narration itself is in English.
 
@@ -54,7 +56,7 @@ agrees.
 1. `python3 scripts/analyze_reference.py` → pacing stats of `style/reference.mp4`
    (seconds per image). The picture style is not analysed: it is fixed.
 2. Read both transcripts completely, as one story, not as separate texts.
-3. Write `work/style_notes.md` (session-only, not committed) with your own findings:
+3. Write down your own findings for this session (in the conversation, no file):
    - **The script as a whole**: the arc from the first line to the last line of Part 2;
      what each part promises, delivers and leaves open; how tension rises across the
      whole video, not only inside scenes; recurring motifs and callbacks (objects, times,
@@ -71,7 +73,7 @@ agrees.
 
 ## 1. Script
 
-Write the script for the user's topic from your own `work/style_notes.md` (length,
+Write the script for the user's topic from your own findings of step 0 (length,
 structure and part transitions taken from the transcripts). Show it to the user as text
 and wait for approval.
 
@@ -168,8 +170,10 @@ Then creatures keep their exact look and size, and the place, light and weather 
 - If the model copies the previous frame instead of a new shot, rewrite the framing in the
   scene (wide shot from far away, over-the-shoulder close shot…) or continue from an earlier
   frame of the moment that shows the needed view.
-- Check every continued frame before making the next one: an error is inherited by every
-  frame after it. Retry a bad frame with `--only <id> --force --tag t2`.
+- Look at the first continued frame of each moment (the first scene with `after` after a
+  normal frame) before making the rest: if it is wrong, every frame after it inherits the
+  error. The other continued frames are not checked unless the user asks. Retry a bad frame
+  with `--only <id> --force --tag t2`.
 
 Order: `images.py` (all normal frames), then `chain.py` (continued frames, one by one in id
 order).
@@ -249,7 +253,12 @@ Rules (tested on Jurassic Part 2; each one fixed a real failure):
 ### Known failure modes
 
 Check for these on contact sheets only when the user asks for a check, and fix by
-regenerating the scene with `--only <ids> --force` after tightening its prompt or refs:
+regenerating the scene with `--only <ids> --force` after tightening its prompt or refs.
+Two former main errors are prevented already: a creature changing look or size between
+frames (continuation frames) and the hero turned into a realistic man or given a helmet
+(the hero rule in `REF_RULES` and the tight `hero_crop.png`). Never fix them by describing
+the hero in a prompt: a description replaces the reference (a face described without a
+mouth came out without a mouth).
 - hero drawn twice in one frame;
 - the hero's appearance differs from `hero.png` (missing mouth, eyes with whites or pupils,
   other hair or clothes);
@@ -279,24 +288,54 @@ part 1 first so the user can check it before you continue.
 
 ### Sending videos to the user
 
-Files above ~100 MB do not download on the user's phone. Send:
-- the full video re-encoded to 720p (`scale=1280:720`, CRF 25), usually 60–75 MB;
-- if 1080p is needed, the 1080p file cut into ~3.5-minute parts with
-  `-c copy -f segment -segment_time 205` (each 55–70 MB);
-- for a sound or picture fix, also a short fragment (20–90 s) of the changed place.
+Send the full `final.mp4` (1080p) as one file. Split it only when the user asks: then
+`-c copy -map 0 -f segment -segment_time 110 -reset_timestamps 1` (parts of ~1:50,
+~50 MB each, they open on the phone). For a sound or picture fix, also send a short
+fragment (20–90 s) of the changed place.
 
 ## 8. Thumbnails (after the finished video is sent)
 
-Offer the user 10 thumbnail options in the competitor's thumbnail style:
-1. Look at `refs/thumbnail_style.jpg` (6 competitor thumbnails, sources and the channel page
-   in `style/thumbnails/`). Their pattern: the hero big and close, one story element behind
-   him, a simple background, 1–2 huge bold words in a free corner ("1 YEAR", "PART 2",
-   "HOUR 1"), sometimes two coloured words for a contrast ("BAD" / "GOOD").
-2. Write `work/<slug>/thumbnails.json`: 10 different ideas `{"text": "...", "idea": "..."}`
-   built from the strongest moments and the title of this video.
-3. `python3 scripts/thumbnails.py work/<slug>/thumbnails.json` → `thumbnails/thumb_01..10.png`
-   (hero + thumbnail reference attached to every one), send all 10, the user picks or asks
-   for changes (`--only 3,7 --force` after editing those ideas).
+Rules from the user:
+- The thumbnail sells the topic of the title and SEO, not the plot: the viewer has not seen
+  the video, so no story details only the video explains (a watch, a time on it, the
+  lightning that moved him). It still must not contradict the video.
+- Epic escalation with the creatures of the video: the hero in danger and in motion (on a
+  vine over a gorge with the T-rex and raptors behind him, jumping off a cliff, with a torch
+  in a night jungle full of glowing eyes, a giant eye looking into his cave…).
+- The text ("1 YEAR", "PART 2"…) is drawn by the model in the top right corner, bold, about
+  a quarter of the image width, not bigger.
+- Never describe the hero's look in the idea; name him CHARACTER 1. Creatures go into the
+  item's `"refs"` and are named by those names.
+- Mix: some in the competitor's layout (`refs/thumbnail_style.jpg`, `style/thumbnails/`:
+  hero big, one threat, simple background), some `"own_layout": true` (cinematic light,
+  yellow text with black outline).
+
+Steps:
+1. Write `work/<slug>/thumbnails.json`, ideas like
+   `{"text": "1 YEAR", "refs": {"T-REX": "<ref path>"}, "idea": "..."}`.
+2. `python3 scripts/thumbnails.py work/<slug>/thumbnails.json` → `thumbnails/thumb_NN.png`.
+   Look at them; redo the ones with a wrong hero (`--only N --force` after adding ` ~b` to that
+   idea, which changes its job key). Send them.
+3. When the user likes one but wants changes (closer, smaller text, one more element), edit
+   that picture instead of a new idea: attach `refs/hero_crop.png` + the chosen picture and
+   ask for "the same thumbnail again, change only: …". If an edit keeps a wrong detail of the
+   picture (skin colour), start from a version where it is right and change only the rest.
+
+## 9. SEO (after the thumbnails)
+
+Research it yourself before writing — use the `agent-reach` skill (and NexLev tools if they
+are connected): the competitor's titles, descriptions, hashtags and tags (the YouTube tag
+field is often empty there), and what the top videos of the niche use. Then write
+`work/<slug>/seo.md`:
+- title in the competitor's pattern ("<Place> Survival 1 Year", "(Part 2)") + 2 spare ones;
+- description: 2–3 hook sentences without spoilers, a question for the comments,
+  "subscribe", chapters, 3–5 hashtags;
+- tags in three groups — niche (survival / animation), sub-niche (dinosaur / prehistoric /
+  caveman), this video — and one ready tag field of at most 500 characters; no film or brand
+  names (Jurassic Park, Jurassic World);
+- category, language, "made for kids: no", pinned comment, end screen.
+- Chapters: take the time of each chapter's first scene from the real `final.mp4` frames
+  (crossfades shift every scene start by up to a second); never from summed clip lengths.
 
 ## Effects (fixed — approved on the 40 s test, identical in every video)
 
@@ -310,6 +349,7 @@ unless the user asks, and never pass ad-hoc overrides.
 | Motion | slow zoom 1.00 → 1.08 over the scene; even scenes zoom in, odd scenes zoom out; centred |
 | Zoom renderer | `perspective` filter, cubic sub-pixel interpolation (no `zoompan`: it shakes) |
 | Transition | 0.4 s crossfade (`xfade=fade` + `acrossfade`) |
+| Voice level | narration brought to −16 LUFS (static gain + peak limiter); VoiceGen files come out near −39 |
 
 Output `work/<slug>/final.mp4`.
 
@@ -364,5 +404,7 @@ by up to 10 dB, so equal dB settings do not sound equal):
   (cloud environment settings) or from the git-ignored `work/.env`. Never put keys in other
   files, commits or chat.
 - RoyalTechno rules: poll images every 5 s with `If-None-Match`, ≤ 20 jobs in flight,
-  one `Idempotency-Key` per job, stop on 400/401/402/403, retry only 429/503.
+  one `Idempotency-Key` per job, stop on 400/401/402/403, retry only 429/503. A failed job
+  is cached under its key (resending it returns the same failure), so `run_jobs` resubmits a
+  failed job up to 3 times, each time with a new key, and logs "retry N/3 with a new key".
 - VoiceGen results expire after 3 days: download immediately.

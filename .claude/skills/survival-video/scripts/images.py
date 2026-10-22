@@ -25,6 +25,7 @@ from common import SKILL_DIR, load_project, scene_name
 
 BASE = "https://api.royaltechno.cc"
 MAX_IN_FLIGHT = 20
+RETRIES = 3  # a failed job is resubmitted this many times, each time with a new Idempotency-Key
 FATAL = {400, 401, 402, 403}
 
 # The prompt opens by introducing each attached reference image by its number (attachment order) and name.
@@ -152,29 +153,36 @@ def output_urls(job):
 
 
 def run_jobs(items, model, poll=5):
-    """items: list of (name, body_input, dest_paths). Sliding window, single poll loop."""
-    queue = list(items)
+    """items: list of (name, body_input, dest_paths). Sliding window, single poll loop.
+
+    A failed job is cached by the API under its Idempotency-Key: sending the same key again returns
+    the same failure. So a failed job is resubmitted (up to RETRIES times) with a new key."""
+    queue = [(name, inp, dests, 0) for name, inp, dests in items]
     inflight = {}
     etags = {}
     done = {}
     while queue or inflight:
         while queue and len(inflight) < MAX_IN_FLIGHT:
-            name, inp, dests = queue[0]
-            idem = str(uuid.uuid5(uuid.NAMESPACE_URL, json.dumps([model, name, inp], sort_keys=True)))
+            name, inp, dests, attempt = queue[0]
+            key = [model, name, inp] + ([attempt] if attempt else [])
+            idem = str(uuid.uuid5(uuid.NAMESPACE_URL, json.dumps(key, sort_keys=True)))
             job = submit({"model": model, "input": inp}, idem)
             if job is None:  # queue_full: wait for a slot
                 break
             queue.pop(0)
-            inflight[job_id(job)] = (name, dests)
+            inflight[job_id(job)] = (name, inp, dests, attempt)
         time.sleep(poll)
-        for jid, (name, dests) in list(inflight.items()):
+        for jid, (name, inp, dests, attempt) in list(inflight.items()):
             h = headers()
             if jid in etags:
                 h["If-None-Match"] = etags[jid]
-            r = requests.get(f"{BASE}/v1/jobs/{jid}", headers=h, timeout=30)
+            try:
+                r = requests.get(f"{BASE}/v1/jobs/{jid}", headers=h, timeout=30)
+            except requests.RequestException:
+                continue  # network hiccup: poll this job again next round
             if r.status_code == 304:
                 continue
-            if r.status_code in (429, 503):
+            if r.status_code in (429, 502, 503, 520):
                 time.sleep(float(r.headers.get("Retry-After", poll)))
                 continue
             r.raise_for_status()
@@ -185,7 +193,11 @@ def run_jobs(items, model, poll=5):
                 continue
             del inflight[jid]
             if status != "succeeded":
-                print(f"{name}: {status} {job.get('error')}")
+                if attempt < RETRIES:
+                    print(f"{name}: {status} {job.get('error')} - retry {attempt + 1}/{RETRIES} with a new key")
+                    queue.append((name, inp, dests, attempt + 1))
+                else:
+                    print(f"{name}: {status} {job.get('error')} - gave up after {RETRIES} retries")
                 continue
             urls = output_urls(job)
             for url, dest in zip(urls, dests):
